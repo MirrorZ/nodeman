@@ -1,3 +1,6 @@
+// compile : gcc nltest2.c -I/usr/include/libnl3 -lnl-genl-3 -lnl-3
+//execute : NLCB=debug ./a.out
+
 #include "netlink/netlink.h"
 #include "netlink/genl/genl.h"
 #include "netlink/genl/ctrl.h"
@@ -7,7 +10,7 @@
 #include "netlink/errno.h"
 
 //copy this from iw
-#include "./nl80211.h"
+#include "nl80211.h"
 
 #define IEEE80211_FTYPE_MGMT		0x0000
 #define IEEE80211_STYPE_ACTION		0x00D0
@@ -19,26 +22,59 @@ static int nlCallback(struct nl_msg* msg, void* arg)
     struct nlmsghdr* ret_hdr = nlmsg_hdr(msg);
     struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
 
+
+    // *** dump msg to file ***
+    FILE * fp = fopen("/home/sudipto/nodeman/dump","w");
+
+    printf("Dumping msg\n");
+
+    nl_msg_dump(msg, fp);
+    fclose(fp);
+
+
     fprintf(stderr, "Inside the nlCallback Function\n");
     
-    printf("in cb ret_hdr->msg_type : %d",ret_hdr->nlmsg_type);
+    printf("in cb ret_hdr->msg_type : %d\n",ret_hdr->nlmsg_type);
     printf("in cb expectedID : %d\n", expectedId);
 
-    if (ret_hdr->nlmsg_type != expectedId) 
-    	{ 
+    int payloadlen = nlmsg_datalen(ret_hdr);
+    printf("Length of the payload = %d\n", payloadlen);
+
+    /*if (ret_hdr->nlmsg_type != expectedId) 
+    { 
         // what is this??
 	    printf("Returning NL_STOP\n");
         return NL_STOP;
-    }
+    }*/
 
     struct genlmsghdr *gnlh = (struct genlmsghdr*) nlmsg_data(ret_hdr);
-    
-    printf("Doing something\n");
 
-    nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-	genlmsg_attrlen(gnlh, 0), NULL);
 
-    printf("parsing done");
+    char * ptr = (char *)gnlh;
+    int i = 0;
+    while(i < payloadlen)
+    {
+        printf("%x\n",*ptr);
+        ptr++;
+        i++;
+    }
+
+
+    printf("Attr len = %d\n",genlmsg_attrlen(gnlh, 0));
+
+    if( genlmsg_attrdata(gnlh, 0) == NULL) printf("attrdata error ");
+
+    printf("\nDoing something\n");
+
+
+    int validateresult  = nla_validate ( genlmsg_attrdata(gnlh, 0),genlmsg_attrlen(gnlh, 0),NL80211_ATTR_MAX,NULL);
+    printf("Validation result = %d\n", validateresult);
+
+    if(nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+	genlmsg_attrlen(gnlh, 0), NULL) < 0) 
+        printf("parse error\n");
+    else
+        printf("parsing done\n");
 
     if (tb_msg[NL80211_ATTR_IFTYPE]) {
         int type = nla_get_u32(tb_msg[NL80211_ATTR_IFTYPE]);	
@@ -70,8 +106,8 @@ static int finish_handler(struct nl_msg *msg, void *arg)
 static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
 			 void *arg)
 {
-printf("Error occured! code : %d", err->error);
-printf("%s",nl_geterror(err->error));
+printf("Error occured! code : %d\n", err->error);
+printf("%s\n",nl_geterror(err->error));
 
 int *ret = arg;
 *ret = err->error;
@@ -88,9 +124,17 @@ int main(int argc, char** argv)
     //allocate socket
     struct nl_sock* sk = nl_socket_alloc();
     unsigned short int type = 0x00D0;//(IEEE80211_FTYPE_MGMT << 2) | (IEEE80211_STYPE_ACTION << 4);
+    
+
+    //type = 0x0080; // For beacons
+
+
+
     struct nl_cb *cb = nl_cb_alloc(NL_CB_DEBUG);
     //connect to generic netlink
     genl_connect(sk);
+
+    printf("Before ctrl_resolve\n");
 
     //find the nl80211 driver ID
     expectedId = genl_ctrl_resolve(sk, "nl80211");
@@ -108,7 +152,7 @@ int main(int argc, char** argv)
     struct nl_msg* msg = nlmsg_alloc();
 
     /* enum nl80211_commands cmd = NL80211_CMD_GET_INTERFACE; */
-    int ifIndex = if_nametoindex("mesh0"); 
+    int ifIndex = if_nametoindex("wlan0"); 
     int flags = 0; 
     enum nl80211_commands cmd = NL80211_CMD_REGISTER_FRAME;
 
@@ -132,13 +176,15 @@ fprintf(stderr,"Before send_auto_complete\n");
 
 ret = nl_send_auto_complete(sk, msg);
 fprintf(stderr, "called auto_complete\n");
+
 //block for message to return
 
-/* while (err > 0) { */
-/*     int res = nl_recvmsgs(sk, cb); */
-/*     if(res < 0) */
-/* 	printf("NL RECVMSG FAILED!\n"); */
-/* } */
+ // while (err > 0) { 
+ //    printf("waiting for recvmsgs");
+ //     int res = nl_recvmsgs(sk, cb); 
+ //     if(res < 0) 
+ // 	printf("NL RECVMSG FAILED!\n"); 
+ // } 
 
 while(1)
     nl_recvmsgs_default(sk);
