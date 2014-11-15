@@ -3,14 +3,14 @@
     .nlmsg_len = 36
     .nlmsg_type = 2 <ERROR>
     .nlmsg_flags = 0 <>
-    .nlmsg_seq = 1414688687
-    .nlmsg_pid = 12585
+    .nlmsg_seq = 1416040200
+    .nlmsg_pid = 21583
   [ERRORMSG] 20 octets
     .error = 0 "Success"
   [ORIGINAL MESSAGE] 16 octets
     .nlmsg_len = 16
     .nlmsg_type = 26 <0x1a>
     .nlmsg_flags = 5 <REQUEST,ACK>
-    .nlmsg_seq = 1414688687
-    .nlmsg_pid = 12585
+    .nlmsg_seq = 1416040200
+    .nlmsg_pid = 21583
 ---------------------------  END NETLINK MESSAGE   ---------------------------
