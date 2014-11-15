@@ -1,5 +1,7 @@
+//NEXT STEP : Understand the parser functions and capture the attributes we need
+
 // compile : gcc nltest2.c -I/usr/include/libnl3 -lnl-genl-3 -lnl-3
-//execute : NLCB=debug ./a.out
+// execute : NLCB=debug ./a.out
 
 #include "netlink/netlink.h"
 #include "netlink/genl/genl.h"
@@ -121,7 +123,7 @@ return NL_SKIP;
  Taken from iw-3.17/station.c
  This is part is currently being used to parse the msg received from the command CMD_GET_STATION
  The command is: iw dev wlan0 station dump
-
+ NEXT STEP : Understand the parser functions and capture the attributes we need
 *****************************************************************************************************/
 
 #define BIT(x) (1ULL<<(x))
@@ -560,6 +562,9 @@ int main(int argc, char** argv)
 
 
     NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, ifIndex);
+    // This mac address is what you see when you run iw dev wlan0 station dump
+    // Not the mac address you see when you do ifconfig wlan0
+    // Change the values accordingly!
     // 00:1d:0f:e8:a1:b0
     macAddrAttrb[0] = 0x00;
     macAddrAttrb[1] = 0x1d;
