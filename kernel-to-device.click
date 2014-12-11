@@ -12,7 +12,6 @@
 
 */
 
-/*
 AddressInfo(
 	REAL_IP 192.168.42.8,
 //	REAL_MAC AC-72-89-25-05-30,
@@ -21,13 +20,12 @@ AddressInfo(
 	FAKE_MAC 1A-2B-3C-4D-5E-6F,
 	FAKE_NETWORK 10.0.0.1/8)
 
-*/
 // Takes traffic from kernel through Kernel tap and sends it to eth0
-tun :: KernelTap(10.0.0.1/8, ETHER 1A-2B-3C-4D-5E-6F)
+tun :: KernelTap(FAKE_NETWORK, ETHER FAKE_MAC)
 
 //Add host's IP address
 
-aq :: ARPQuerier(192.168.42.8, eth0);
+aq :: ARPQuerier(REAL_IP, eth0);
 ar :: ARPResponder(0/0 1:1:1:1:1:1);
 fh_cl :: Classifier(12/0806, 12/0800)
 fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, -)
@@ -56,7 +54,7 @@ fh_cl[0] -> ar -> tun;
 fh_cl[1] -> IPPrint(HostIP) 
  	 -> Strip(14)                           // remove crap Ether header
          -> MarkIPHeader(0)
-         -> StoreIPAddress(192.168.42.8, 12)    // store real address as source (Host's IP address)
+         -> StoreIPAddress(REAL_IP, 12)    // store real address as source (Host's IP address)
          -> FixChecksums                        // recalculate checksum
          -> SetIPAddress(192.168.42.1)          // route via gateway (Router's address)
          -> [0]aq
@@ -72,7 +70,7 @@ fd -> fd_cl;
 // ARP req from device
 // ARPResponder to resolve requests for host's IP
 // Replace it with host's IP address and MAC address  
-fd_cl[0] -> ARPResponder(192.168.42.8 00-18-F3-81-1A-B5) -> Queue -> [1]rrs
+fd_cl[0] -> ARPResponder(REAL_IP REAL_MAC) -> Queue -> [1]rrs
 
 
 //ARP response from device
@@ -86,11 +84,11 @@ fd_cl[2] -> CheckIPHeader(14)
 //        -> ipc :: IPClassifier(src net 192.168.42.1/24, -)
 	  ->ipc :: IPClassifier(dst net 192.168.42.1/24, -)
         // replace the real destination address with the fake address
-        -> StoreIPAddress(10.0.0.1, 30)
+        -> StoreIPAddress(FAKE_IP, 30)
         -> FixChecksums
 	-> Print(fd_cl2, MAXLENGTH 200)
 	-> Strip(14)
-	-> EtherEncap(0x0800, 00-18-F3-81-1A-B5, 1A-2B-3C-4D-5E-6F)
+	-> EtherEncap(0x0800, REAL_MAC, FAKE_MAC)
         -> tun
 
 //Forward IP packet not meant for the host
