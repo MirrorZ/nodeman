@@ -1,0 +1,21 @@
+Before ctrl_resolve
+expectedID : 26
+ifindex : 3
+Station 00:1d:0f:e8:a1:b0 (on wlan0)
+	inactive time:	8680 ms
+	rx bytes:	551516685
+	rx packets:	618008
+	tx bytes:	41082554
+	tx packets:	388930
+	tx retries:	55821
+	tx failed:	37
+	signal:  	-71 dBm
+	signal avg:	-70 dBm
+	tx bitrate:	54.0 MBit/s
+	rx bitrate:	36.0 MBit/s
+	authorized:	yes
+	authenticated:	yes
+	preamble:	long
+	WMM/WME:	no
+	MFP:		no
+	TDLS peer:	no
