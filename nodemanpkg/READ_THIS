@@ -1,0 +1,14 @@
+The configure.ac file has the package name 'nodemanpkg'.
+We can write elements as .cc and .hh files and put them in the src folder. 
+Those elements would be available in our click files once we 'require' them in the click config file.
+To use the package, in a click config file we'll write: require(package "nodemanpkg");
+
+To install the package:
+1. run autoconf
+2. run ./configure --prefix=DIR
+	where DIR is where your click is installed
+3. run make install
+
+Whenever you add/remove an element, run make elemlist and then run make install.
+
+Whenever you make changes to an element, just run make install.
