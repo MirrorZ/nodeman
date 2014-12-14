@@ -1,0 +1,13 @@
+When Station A joins the mesh it broadcasts beacon frames (after an interval of 100ms) to show their presence in the network. Similarly, all the stations as well as the gates broadcasts beacon frames. When an new station joins the mesh network, in this case station B, peer link management frames (subtype action) are exchanged. 
+Peer Mesh Open Frame :: used to offer peering connection to the neighbour
+Peer Mesh Confirm Frame :: when the station agrees for peering, they send the confirm frame
+These frames are exchanged between the new station and every existing station which is used to establish and manage the peering between neighbouring stations.
+-Side A offers, side B confirms, then side B offers and side A confirms
+-Or side A offers, side B offers, side A confirms and side B confirms (or side B
+confirms then side A confirms)
+Any sequence of operation is allowed, but the process must be bidirectional to be complete.
+
+The stations within the mesh have no idea how to reach their neighbouring stations. Hence HWMP (Hybrid Wireless Mesh Protocol) is used for path selection. 
+For instance when Mesh station A wants to ping station B, it will broadcast an ARP packet asking for it's MAC address. When this packet reaches station B, it does not know the path to reply to station A as the reply needs to be unicast. In this case it will send a Path Request frame (PREQ) to all the stations in it's range. The stations that have no path to the intended destination reply with a Path Error (PERR) message. While a station that has a path to the target destination, accepts the frame and replies with a frame containing a Path Reply (PREP) element. Mesh station B will then reply to station A via the obtained path.
+
+The HWMP frames also have a flag bit is_gate. When a gate which has enabled it's gate announcements sends out HWMP frame, this bit is set to 1.
