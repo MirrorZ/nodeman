@@ -25,14 +25,14 @@ rrs::RoundRobinSched()
 	-> [0]rrs
         
 
-FromDevice(br0) -> fd_cl
+FromDevice(br0, SNIFFER false) -> fd_cl
 
 rrs-> ToDevice(br0)
 
 // ARP req from device
 // ARPResponder to resolve requests for host's IP
-// Replace it with host's IP address and MAC address
-fd_cl[0] -> ARPResponder(192.168.42.196 78:ac:c0:46:b2:a7) -> Queue -> [1]rrs
+// Replace it with host's IP address and MAC address(mesh)
+fd_cl[0] -> ARPResponder(192.168.42.196 c0:4a:00:23:ba:bd) -> Queue -> [1]rrs
 
 //ARP response from device
 //fd_cl[1] -> t :: Tee;
