@@ -42,12 +42,12 @@ fd_cl[1] -> [1]aq;
 //IP from device
 fd_cl[2] -> CheckIPHeader(14)
         // check for responses from the test network
-        -> ipc :: IPClassifier(src net 192.168.42.1/24, -)
+	// Packets destined for the host
+        -> ipc :: IPClassifier(dst 192.168.42.196)
         // replace the real destination address with the fake address
         -> StoreIPAddress(10.0.0.1, 30)
         -> FixChecksums
         -> Strip(14)
-        //-> EtherEncap(0x0800, 00:00:c0:ae:67:ef, 1a:2b:3c:4d:5e:6f)
         -> tun
 
 //Forward IP packet not meant for the host
