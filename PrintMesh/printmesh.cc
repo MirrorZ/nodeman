@@ -352,49 +352,41 @@ String mesh_unparse_beacon(Packet *p,struct click_wifi *w) {
 
   sa<<" ";
 
-//Not Working
-
- 
+ sa <<  "Mesh_Conf:{ ";
  if(mesh_conf){
-	 struct meshconf *mc = (struct meshconf *)mesh_conf; /*
-	 switch(mc->psel)
-	{
-		case HWMP_PROTOCOL : 
-			sa << "HWMP ";
-			break;
-	}
-/*
-	 if (hwmp == 1)
+
+	struct meshconf *mc = (struct meshconf *)mesh_conf; 
+	if (mc->psel == 0x01)
 		sa<< "HWMP ";
-  if (mc->pmetric == 0x01)
-	sa << "Airtime ";
-  if (mc->congest == 0x01)
-	sa << "Congestion Control ";
-  if (mc->synch == 0x01)
-	sa << "Neighbour Offset Sync ";
-  if (mc->auth == 0x01)
-	sa << "Authentication Protocol ";
-  /*if (mc->form <  IEEE80211_MAX_MESH_PEERINGS){    
-	mconf->meshconf_form >> = 1;
-	sa << "Number of Peering : "<< (mconf->meshconf_form & 0x3f);
-  }*/
-  sa << "Mesh_Capabilities:[";
-  if(mc->cap & MESHCONF_CAPAB_ACCEPT_PLINKS)	
-	sa <<"Accept_Mesh_Peering ";
-  if(mc->cap & MESHCONF_CAPAB_MCCA_SUPPORT)	
-	sa <<"MCCA_support ";
-  if(mc->cap & MESHCONF_CAPAB_MCCA_ENABLED)	
-	sa <<"MCCA_Enabled ";
-  if(mc->cap & MESHCONF_CAPAB_FORWARDING)	
-	sa <<"Mesh_Forwarding ";
-  if(mc->cap & MESHCONF_CAPAB_MBCA_ENABLED)	
-	sa <<"MBCA_Enabled ";
-  if(mc->cap & MESHCONF_CAPAB_TBTT_ADJUSTING)	
-	sa <<"TBTT_Adjustment ";
-  if(mc->cap & MESHCONF_CAPAB_POWER_SAVE_LEVEL)	
-	sa <<"Power_Save";
+	if (mc->pmetric == 0x01)
+		sa << "Airtime ";
+	if (mc->congest == 0x01)
+		sa << "Congestion_Control ";
+	if (mc->synch == 0x01)
+		sa << "Neighbour_Offset_Sync ";
+	if (mc->auth == 0x01)
+		sa << "Authentication_Protocol ";
+	
+	sa << " ,Number_of_Peering:"<< mc->form/2;
+	
+	sa << " ,Mesh_Capabilities:[";
+	if(mc->cap & MESHCONF_CAPAB_ACCEPT_PLINKS)	
+		sa <<"Accept_Mesh_Peering ";
+	if(mc->cap & MESHCONF_CAPAB_MCCA_SUPPORT)	
+		sa <<"MCCA_support ";
+	if(mc->cap & MESHCONF_CAPAB_MCCA_ENABLED)	
+		sa <<"MCCA_Enabled ";
+	if(mc->cap & MESHCONF_CAPAB_FORWARDING)	
+		sa <<"Mesh_Forwarding ";
+	if(mc->cap & MESHCONF_CAPAB_MBCA_ENABLED)	
+		sa <<"MBCA_Enabled ";
+	if(mc->cap & MESHCONF_CAPAB_TBTT_ADJUSTING)	
+		sa <<"TBTT_Adjustment ";
+	if(mc->cap & MESHCONF_CAPAB_POWER_SAVE_LEVEL)	
+		sa <<"Power_Save";
+  }
   sa<< "] ";
- }
+  sa << "} ";
 
   return sa.take_string();
 }
@@ -686,12 +678,12 @@ PrintMesh::simple_action(Packet *p)
       sa << "probe_resp ";
       sa << mesh_unparse_beacon(p,wh);
       break;
-      //goto done;
+
     case WIFI_FC0_SUBTYPE_BEACON:
       sa << "beacon ";
       sa << mesh_unparse_beacon(p,wh);
       break;
-      //goto done;
+
     case WIFI_FC0_SUBTYPE_ATIM:           sa << "atim "; break;
     case WIFI_FC0_SUBTYPE_DISASSOC:       {
       uint16_t reason = le16_to_cpu(*(uint16_t *) ptr);
@@ -754,7 +746,7 @@ PrintMesh::simple_action(Packet *p)
 
   if (subtype == WIFI_FC0_SUBTYPE_BEACON || subtype == WIFI_FC0_SUBTYPE_PROBE_RESP) {
 
-    click_chatter("%s\n", sa.c_str());
+    click_chatter("%s\n\n", sa.c_str());
     return p;
   }
 
@@ -807,7 +799,8 @@ PrintMesh::simple_action(Packet *p)
   }
 
  */
-  click_chatter("%s\n", sa.c_str());
+  
+  click_chatter("%s\n\n", sa.c_str());
   return p;
 }
 

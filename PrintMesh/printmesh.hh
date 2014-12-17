@@ -34,6 +34,7 @@ enum {
 
 //Struct for Mesh Configuration
 struct meshconf {
+	uint16_t temp;
 	uint8_t psel;
 	uint8_t pmetric;
 	uint8_t congest;
