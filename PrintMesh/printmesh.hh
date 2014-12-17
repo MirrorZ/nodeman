@@ -13,6 +13,11 @@ CLICK_DECLS
 enum {
   WIFI_ELEMID_MESHCONF     	= 113, 
   WIFI_ELEMID_MESHID		= 114,
+  WIFI_ELEMID_MESH_PEERING_MGMT = 117,
+  WIFI_ELEMID_MESH_PATH_REQ     = 130,
+  WIFI_ELEMID_MESH_PATH_REP     = 131,
+  WIFI_ELEMID_ROOT_ANNOUNCEMENT = 126,
+
 };
 
 //Capability Info
@@ -46,7 +51,34 @@ struct meshconf {
 #define	MESHCONF_CAPAB_TBTT_ADJUSTING		0x20
 #define	MESHCONF_CAPAB_POWER_SAVE_LEVEL		0x40
 
+#define CAT_CODE_MESH				0x0d
+#define CAT_CODE_SELF_PROTECTED			0x0f
+#define HWMP_MESH_PATH_SELECTION		0x01
+/* Self Protected Action codes */
+enum ieee80211_self_protected_actioncode {
+	WLAN_SP_RESERVED = 0,
+	WLAN_SP_MESH_PEERING_OPEN = 1,
+	WLAN_SP_MESH_PEERING_CONFIRM = 2,
+	WLAN_SP_MESH_PEERING_CLOSE = 3,
+	WLAN_SP_MGK_INFORM = 4,
+	WLAN_SP_MGK_ACK = 5,
+};
 
+/* Check where this will be applicable*/
+enum ieee80211_root_mode_identifier {
+	IEEE80211_ROOTMODE_NO_ROOT = 0,
+	IEEE80211_ROOTMODE_ROOT = 1,
+	IEEE80211_PROACTIVE_PREQ_NO_PREP = 2,
+	IEEE80211_PROACTIVE_PREQ_WITH_PREP = 3,
+	IEEE80211_PROACTIVE_RANN = 4,
+};
+
+//RANN Flag
+#define RANN_FLAG_SET 	0x01
+
+struct root_sta_address {
+	uint8_t addr[WIFI_ADDR_LEN];
+};
 
 class PrintMesh : public Element {
 
