@@ -15,12 +15,12 @@
 */
 
 AddressInfo(
-	REAL_IP 192.168.42.36,
+	REAL_IP 192.168.42.37,
 //	REAL_MAC AC-72-89-25-05-30,
 //	REAL_MAC 00-18-F3-81-1A-B5,
 //	REAL_MAC E8-94-F6-26-25-A5,
 //	REAL_MAC 02-61-67-30-68-59,
-	REAL_MAC 02-5D-6C-67-33-6A,
+	REAL_MAC C0-4A-00-23-BA-BD,
 	FAKE_IP 10.0.0.1,
 	FAKE_MAC 1A-2B-3C-4D-5E-6F,
 	FAKE_NETWORK 10.0.0.1/8)
@@ -30,11 +30,11 @@ tun :: KernelTap(FAKE_NETWORK, ETHER FAKE_MAC)
 
 //Add host's IP address
 
-aq :: ARPQuerier(REAL_IP, br0);
+aq :: ARPQuerier(REAL_IP, mesh0);
 ar :: ARPResponder(0/0 1:1:1:1:1:1);
 fh_cl :: Classifier(12/0806, 12/0800)
 fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, -)
-fd :: FromDevice(br0, SNIFFER false)
+fd :: FromDevice(mesh0, SNIFFER false)
 rrs :: RoundRobinSched()
 //rrs2 :: RoundRobinSched()
 
@@ -49,7 +49,7 @@ elementclass FixChecksums {
     ipc[2] -> output
 }
 
-tun -> fh_cl;
+tun -> Print(ComingFromTun) -> fh_cl;
 
 //((wlan.sa[0:3] == e8:de:27) || (wlan.sa[0:3] == c0:4a:00))&& !(wlan.da == ff:ff:ff:ff:ff:ff)
 //((wlan.sa[0:3] == e8:de:27) || (wlan.sa[0:3] == c0:4a:00) || (wlan.sa[0:3] == 94:db:c9)) && !(wlan.da == ff:ff:ff:ff:ff:ff)
@@ -57,23 +57,37 @@ tun -> fh_cl;
 //ARP request from Host
 fh_cl[0] -> ar -> tun;
 
+rrs1::RoundRobinSched()
+
 //IP from Host
 fh_cl[1] -> IPPrint(HostIP) 
  	 -> Strip(14)                           // remove crap Ether header
          -> MarkIPHeader(0)
          -> StoreIPAddress(REAL_IP, 12)		// store real address as source (Host's IP address)
          -> FixChecksums                        // recalculate checksum
-//	 -> gs :: IPClassifier(dst net 141.101.120.14/24, -) //173.194.36.0/24, -)
-//	 -> gs :: IPClassifier(port & 1 == 0, -)
-	 -> SetIPAddress(192.168.42.129)          // route via gateway (Router's address)
+	 -> gs :: IPClassifier(dst net 192.168.42.1/24, -) 
+	 -> GetIPAddress(16)
+	 //-> IPPrint()
+	 -> Queue
+	 -> [0]rrs1	
 
-//-> [0]rrs2;
+	    gs[1]
+	 -> SetIPAddress(192.168.42.1)          // route via gateway (Router's address)
+	 -> Queue
+	 -> [1]rrs1
 
-	 -> [0]aq -> Queue -> [0]rrs;
+	    rrs1
+	 //-> Queue
+	 -> pt::PullTee -> Discard
+	    pt[1]
+	 -> [0]aq
+	 -> Print(AfterARPQ, MAXLENGTH 200)
+	 -> IPPrint() 
+	 -> Queue -> [0]rrs;
 
 //gs[1] -> Queue -> SetIPAddress(192.168.42.1) -> [1]rrs2;
 
-rrs -> ToDevice(br0);
+rrs -> ToDevice(mesh0);
 //rrs2 -> pt :: PullTee[1] ->[0]aq -> Queue -> [0]rrs;
 
 //pt[0] -> Discard;
