@@ -8,6 +8,7 @@ fi
 echo "Setting up the gate."
 iw dev $1 interface add $2 type mp
 
+ifconfig $1 down
 #echo "Putting down $3 and $2"
 ifconfig $2 down
 ifconfig $3 down
