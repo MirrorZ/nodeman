@@ -30,15 +30,23 @@ gs[1]	-> SetIPAddress(192.168.42.129)             // route via gateway
 	-> Print(here)
 	-> [1]rrs1
         
+pt::PullTee -> Discard
+
+rrs1 -> pt[1]-> aq::ARPQuerier(192.168.42.4, br0)
+        -> Queue
+        -> Print(here)
+	-> Print(AfterARPQ, MAXLENGTH 200)
+        -> IPPrint()
+        -> Queue 
+	-> rrs
+	-> ToDevice(br0)
 
 FromDevice(br0, SNIFFER false) -> fd_cl
-
-rrs1-> ToDevice(br0)
 
 // ARP req from device
 // ARPResponder to resolve requests for host's IP
 // Replace it with host's IP address and MAC address(mesh)
-fd_cl[0] -> ARPResponder(192.168.42.4 e8:de:27:09:06:20) -> Queue -> [2]rrs1
+fd_cl[0] -> ARPResponder(192.168.42.4 e8:de:27:09:06:20) -> Queue -> [1]rrs
 
 //ARP response from device
 //fd_cl[1] -> t :: Tee;
@@ -57,7 +65,7 @@ fd_cl[2] -> CheckIPHeader(14)
         -> tun
 
 //Forward IP packet not meant for the host
-ipc[1] -> Queue -> [3]rrs1
+ipc[1] -> Queue -> [2]rrs
 
 //Anything else from device
 fd_cl[3] -> tun
