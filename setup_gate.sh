@@ -1,22 +1,27 @@
-#echo "Putting wlan0 down"
-#ifconfig wlan0 down
+#!/bin/bash
 
-echo "Creating mesh0 mesh point from wlan1"
-iw dev wlan1 interface add mesh0 type mp
+if [ $# -ne 4 ]; then
+    echo "Usage : # ./setup_gate wlanX meshY <other-bridge-interface> <bridge>"
+    exit 1
+fi
 
-echo "Putting down eth0 and mesh0"
-ifconfig mesh0 down
-ifconfig eth0 down
+echo "Setting up the gate."
+iw dev $1 interface add $2 type mp
 
-echo "Creating bridge"
-brctl addbr br0
-brctl addif br0 eth0 mesh0
-ifconfig eth0 up
+#echo "Putting down $3 and $2"
+ifconfig $2 down
+ifconfig $3 down
 
-echo "Waiting for IP Address assignment on bridge"
-dhcpcd br0
+#echo "Creating bridge"
+brctl addbr $4
+brctl addif $4 $3 $2
+ifconfig $3 up
 
-echo "Joining mesh <ID> openmesh"
-ifconfig mesh0 up
-iw dev mesh0 mesh join openmesh
+#echo "Waiting for IP Address assignment on bridge"
+dhcpcd $4
+
+#echo "Joining mesh <ID> openmesh"
+ifconfig $1 down
+ifconfig $2 up
+iw dev $2 mesh join openmesh
 echo "Done."
