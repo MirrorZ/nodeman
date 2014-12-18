@@ -1,8 +1,5 @@
 /*
- * printWifi.{cc,hh} -- print Wifi packets, for debugging.
- * John Bicket
- *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * printmesh.{cc,hh} -- print Mesh packets, for debugging.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -38,7 +35,6 @@ PrintMesh::~PrintMesh()
 
 String mesh_unparse_beacon(Packet *p,struct click_wifi *w) {
   uint8_t *ptr;
-  //struct click_wifi *w = (struct click_wifi *) p->data();
   StringAccum sa;
 
   ptr = (uint8_t *) (w+1);
@@ -62,6 +58,7 @@ String mesh_unparse_beacon(Packet *p,struct click_wifi *w) {
   uint8_t *mesh_id = NULL;
   uint8_t *mesh_conf = NULL;
   uint8_t *traffic_imap  = NULL;
+  uint8_t *mesh_peer_mgmt = NULL;
   while (ptr < end) {
     switch (*ptr) {
     case WIFI_ELEMID_SSID:
@@ -91,8 +88,11 @@ String mesh_unparse_beacon(Packet *p,struct click_wifi *w) {
 	mesh_conf = ptr;
 	break;     	 
     case  WIFI_ELEMID_MESHID:
-	mesh_id=ptr;
+	mesh_id = ptr;
 	break;		
+    case WIFI_ELEMID_MESH_PEERING_MGMT:
+	mesh_peer_mgmt = ptr;
+	break;
     }
     ptr += ptr[1] + 2;
 
@@ -105,12 +105,6 @@ String mesh_unparse_beacon(Packet *p,struct click_wifi *w) {
   if (ssid_l && ssid_l[1]) {
     ssid = String((char *) ssid_l + 2, WIFI_MIN((int)ssid_l[1], WIFI_NWID_MAXSIZE));
   }
-
-  /*if (ssid == "") {
-    sa << "(none)";
-  } else {
-    sa << ssid;
-  }*/
 
   int chan = (ds_l) ? ds_l[2] : 0;
   sa << " Channel:" << chan;
@@ -194,7 +188,7 @@ String mesh_unparse_beacon(Packet *p,struct click_wifi *w) {
 
   sa << "Supported Rates : (";
   for (int x = 0; x < basic_rates.size(); x++) {
-    sa << basic_rates[x]/2;
+    sa << basic_rates[x]/2 << " ";
     if (x != basic_rates.size()-1) {
       sa << " ";
     }
@@ -220,47 +214,199 @@ String mesh_unparse_beacon(Packet *p,struct click_wifi *w) {
 
   sa<<" ";
 
-//Not Working
-
- /*
+ sa <<  "Mesh_Conf:{ ";
  if(mesh_conf){
-	 struct meshconf *mc = (struct meshconf *)mesh_conf; 
-	 int hwmp = (int)(mc->psel & 0xff);
-	 if (hwmp == 1)
-		sa<< "HWMP ";
-  if (mc->pmetric == 0x01)
-	sa << "Airtime ";
-  if (mc->congest == 0x01)
-	sa << "Congestion Control ";
-  if (mc->synch == 0x01)
-	sa << "Neighbour Offset Sync ";
-  if (mc->auth == 0x01)
-	sa << "Authentication Protocol ";
-  /*if (mc->form <  IEEE80211_MAX_MESH_PEERINGS){    
-	mconf->meshconf_form >> = 1;
-	sa << "Number of Peering : "<< (mconf->meshconf_form & 0x3f);
-  }*//*
-  int cap=(*(uint8_t *) mc->cap);	
-  sa << "Mesh_Capabilities:[";
-  if(cap & MESHCONF_CAPAB_ACCEPT_PLINKS)	
-	sa <<"Accept Mesh Peering, ";
-  if(cap & MESHCONF_CAPAB_MCCA_SUPPORT)	
-	sa <<"MCCA support, ";
-  if(cap & MESHCONF_CAPAB_MCCA_ENABLED)	
-	sa <<"MCCA Enabled, ";
-  if(cap & MESHCONF_CAPAB_FORWARDING)	
-	sa <<"Mesh Forwarding, ";
-  if(cap & MESHCONF_CAPAB_MBCA_ENABLED)	
-	sa <<"MBCA Enabled, ";
-  if(cap & MESHCONF_CAPAB_TBTT_ADJUSTING)	
-	sa <<"TBTT Adjustment, ";
-  if(cap & MESHCONF_CAPAB_POWER_SAVE_LEVEL)	
-	sa <<"Power Save";
-  sa<< "] ";
- }*/
 
+	struct meshconf *mc = (struct meshconf *)mesh_conf; 
+	if (mc->psel == 0x01)
+		sa<< "HWMP ";
+	if (mc->pmetric == 0x01)
+		sa << "Airtime ";
+	if (mc->congest == 0x01)
+		sa << "Congestion_Control ";
+	if (mc->synch == 0x01)
+		sa << "Neighbour_Offset_Sync ";
+	if (mc->auth == 0x01)
+		sa << "Authentication_Protocol ";
+	
+	sa << " ,Number_of_Peering:"<< mc->form/2;
+	
+	sa << " ,Mesh_Capabilities:[";
+	if(mc->cap & MESHCONF_CAPAB_ACCEPT_PLINKS)	
+		sa <<"Accept_Mesh_Peering ";
+	if(mc->cap & MESHCONF_CAPAB_MCCA_SUPPORT)	
+		sa <<"MCCA_support ";
+	if(mc->cap & MESHCONF_CAPAB_MCCA_ENABLED)	
+		sa <<"MCCA_Enabled ";
+	if(mc->cap & MESHCONF_CAPAB_FORWARDING)	
+		sa <<"Mesh_Forwarding ";
+	if(mc->cap & MESHCONF_CAPAB_MBCA_ENABLED)	
+		sa <<"MBCA_Enabled ";
+	if(mc->cap & MESHCONF_CAPAB_TBTT_ADJUSTING)	
+		sa <<"TBTT_Adjustment ";
+	if(mc->cap & MESHCONF_CAPAB_POWER_SAVE_LEVEL)	
+		sa <<"Power_Save";
+  }
+  sa<< "] ";
+  sa << "} ";
+
+  if(mesh_peer_mgmt)
+  {
+	mesh_peer_mgmt+=4;
+	uint16_t llid = *(uint16_t *)mesh_peer_mgmt;
+	sa << "Local_Link_ID:" << llid;
+	
+	if((mesh_peer_mgmt+1) < end )
+	{
+		uint16_t plid = *(uint16_t *)mesh_peer_mgmt;
+		sa << "Peer_Link_ID:" << plid;
+	}
+  }
+  sa << " ";
   return sa.take_string();
 }
+
+
+String handle_mesh_code(uint8_t *mc, bool is_preq,bool is_prep, bool is_root)
+{
+  	StringAccum sa;
+	struct root_sta_address *ra;
+
+	if(is_root && *mc++ == RANN_FLAG_SET)
+		sa << "is_gate=1 ";
+	
+	int hop_count= *mc;
+	sa <<"Hop_Count:"<<hop_count;
+	
+	int hwmp_ttl =  *(++mc);
+	sa<<" HWMP_TTL:"<<hwmp_ttl;
+	
+	if(is_preq)
+	{
+		mc++;
+		uint32_t hwmp_path_dis_id =  *(uint32_t *)mc;;
+		sa << " HWMP_Path_Discover_ID:"<< hwmp_path_dis_id;
+		mc+=3;
+	}
+
+	mc++;
+	ra = (struct root_sta_address *)mc;
+	if(is_preq)
+		sa<<" Originator";
+	else if(is_prep)
+		sa<<" Target";
+	else if(is_root)
+		sa<<" Root";
+
+	sa << "_STA_Addr:"<<EtherAddress(ra->addr)<<" ";
+	mc+=6;
+
+	uint32_t seq = *mc;
+	if(is_preq)
+		sa<<"HWMP_Originator_";
+	else if(is_prep)
+		sa<<"Target_HWMP_";
+	else if(is_root)
+		sa<<"Root_STA_";
+	sa << "Sequence_Number:"<< seq <<" ";
+
+	mc+=4;
+	uint32_t interval =  *(uint32_t *)mc;;
+	
+	if(is_root)
+		sa << "RANN_Interval:";
+	else
+		sa << "HWMP_Lifetime:";
+	sa << interval;
+
+	mc+=4;
+
+	uint32_t metric = *(uint32_t *)mc;
+	sa << " HWMP_Metric:" << metric<<" ";
+	
+	mc+=4;
+
+	if(is_preq)
+		mc+=2;
+
+	if(is_preq || is_prep){
+		ra = (struct root_sta_address *)mc;
+		if(is_preq)
+			sa<<"Target";
+		else if(is_prep)
+			sa<<"Originator";
+
+		sa << "_STA_Addr:"<<EtherAddress(ra->addr)<<" ";
+		mc+=6;
+
+		seq =  *(uint32_t *)mc;
+		if(is_prep)
+			sa<<"HWMP_Originator_";
+		else if(is_preq)
+			sa<<"Target_HWMP_";
+
+		sa << "Sequence_Number:"<< seq <<" ";
+	}
+	
+
+	return sa.take_string();
+}
+
+String mesh_unparse_action(Packet *p,struct click_wifi *w){
+ StringAccum sa; 
+ uint8_t *ptr = (uint8_t *) (w+1);
+ uint8_t *end  = (uint8_t *) p->data() + p->length();
+ 
+ uint8_t cat_code = *ptr;
+ ptr++;
+ switch(cat_code)
+ {
+	case CAT_CODE_MESH : 
+		
+		sa <<"Category:Mesh ";
+		if(*ptr & HWMP_MESH_PATH_SELECTION)
+			sa<<"Action:HWMP_Mesh_Path_Selection ";
+		    ptr++;		    	
+		    switch (*ptr) {
+			case  WIFI_ELEMID_MESH_PATH_REQ :
+				sa << "Tag:Mesh_Path_Request ";
+				sa << handle_mesh_code(ptr+3,true,false,false);   
+				break;
+			case  WIFI_ELEMID_MESH_PATH_REP :
+				sa << "Tag:Mesh_Path_Reply ";    
+				sa << handle_mesh_code(ptr+3,false,true,false);   
+				break;
+			case  WIFI_ELEMID_ROOT_ANNOUNCEMENT :
+				sa << "Tag:Root_Announcements ";
+				sa << handle_mesh_code(ptr+2,false,false,true);
+				break;
+		    }
+		break;
+	case CAT_CODE_SELF_PROTECTED : 
+		sa <<"Category: Self Protected ";
+		switch(*ptr)
+		{
+			case	WLAN_SP_MESH_PEERING_OPEN : 
+				sa<< "Action:Mesh_Peering_Open ";
+				sa << mesh_unparse_beacon(p,w);
+				break; 
+			case	WLAN_SP_MESH_PEERING_CONFIRM :
+				sa<< "Action:Mesh_Peering_Confirm ";
+				sa << mesh_unparse_beacon(p,w);
+				break;
+			case	WLAN_SP_MESH_PEERING_CLOSE :
+				sa<< "Action:Mesh_Peering_Close ";
+				break;
+			default : sa << "Unknown_Action:" << (*ptr);
+		}
+	break;
+ }
+
+	return sa.take_string();
+}
+
+
+
 
 String mesh_reason_string(int reason) {
   switch (reason) {
@@ -488,7 +634,7 @@ PrintMesh::simple_action(Packet *p)
     sa << "??? ";
   }
 
-  uint8_t *ptr = (uint8_t *) p->data() + sizeof(click_wifi) + ptr1;
+  uint8_t *ptr = ptr1 + sizeof(click_wifi);
   switch (type) {
   case WIFI_FC0_TYPE_MGT:
     sa << "mgmt ";
@@ -549,12 +695,12 @@ PrintMesh::simple_action(Packet *p)
       sa << "probe_resp ";
       sa << mesh_unparse_beacon(p,wh);
       break;
-      //goto done;
+
     case WIFI_FC0_SUBTYPE_BEACON:
       sa << "beacon ";
       sa << mesh_unparse_beacon(p,wh);
       break;
-      //goto done;
+
     case WIFI_FC0_SUBTYPE_ATIM:           sa << "atim "; break;
     case WIFI_FC0_SUBTYPE_DISASSOC:       {
       uint16_t reason = le16_to_cpu(*(uint16_t *) ptr);
@@ -617,7 +763,7 @@ PrintMesh::simple_action(Packet *p)
 
   if (subtype == WIFI_FC0_SUBTYPE_BEACON || subtype == WIFI_FC0_SUBTYPE_PROBE_RESP) {
 
-    click_chatter("%s\n", sa.c_str());
+    click_chatter("%s\n\n", sa.c_str());
     return p;
   }
 
@@ -670,7 +816,8 @@ PrintMesh::simple_action(Packet *p)
   }
 
  */
-  click_chatter("%s\n", sa.c_str());
+  
+  click_chatter("%s\n\n", sa.c_str());
   return p;
 }
 
