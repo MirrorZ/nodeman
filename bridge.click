@@ -10,19 +10,26 @@ elementclass FixChecksums {
     ipc[2] -> output
 }
 
+rrs1::RoundRobinSched()
+
 tun::KernelTun(10.0.0.1/8)
 fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, -)
 rrs::RoundRobinSched()
 
-	tun
-        -> MarkIPHeader(0)
+tun     -> MarkIPHeader(0)
         -> StoreIPAddress(192.168.42.196, 12)          // store real address as source
+	-> ipc :: IPClassifier(dst net 192.168.42.1/24, -)
         -> FixChecksums                         // recalculate checksum
-        -> SetIPAddress(192.168.42.1)             // route via gateway
+        -> gs :: IPClassifier(dst net 192.168.42.1/24,- )
+	-> GetIPAddress(16)
+	-> Queue
+	-> [0]rrs1
+
+gs[1]	-> SetIPAddress(192.168.42.1)             // route via gateway
 	-> aq::ARPQuerier(192.168.42.196, br0)
         -> Queue
 	-> Print(here)
-	-> [0]rrs
+	-> [0]rrs1
         
 
 FromDevice(br0, SNIFFER false) -> fd_cl
