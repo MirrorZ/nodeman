@@ -12,6 +12,7 @@ fi
 echo "Adding interface mesh0"
 
 iw dev $1 interface add $2 type mp
+ifconfig $1 down
 ifconfig $2 up
 iw dev $2 mesh join openmesh
 
