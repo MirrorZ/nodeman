@@ -14,7 +14,7 @@ rrs1::RoundRobinSched()
 
 tun::KernelTun(10.0.0.1/8)
 fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, -)
-//rrs::RoundRobinSched()
+rrs::RoundRobinSched()
 
 tun     -> MarkIPHeader(0)
         -> StoreIPAddress(192.168.42.4, 12)          // store real address as source
@@ -24,19 +24,20 @@ tun     -> MarkIPHeader(0)
 	-> Queue
 	-> [0]rrs1
 
+tun[1]  -> Print() -> Queue -> ARPResponder(0/0 01:01:01:01:01:01) -> [3]rrs
+
 gs[1]	-> SetIPAddress(192.168.42.129)             // route via gateway
-	-> aq::ARPQuerier(192.168.42.4, br0)
-        -> Queue
-	-> Print(here)
+	-> Queue
+	//-> Print(here)
 	-> [1]rrs1
         
 pt::PullTee -> Discard
 
 rrs1 -> pt[1]-> aq::ARPQuerier(192.168.42.4, br0)
-        -> Queue
-        -> Print(here)
-	-> Print(AfterARPQ, MAXLENGTH 200)
-        -> IPPrint()
+       // -> Queue
+       // -> Print(here)
+//	-> Print(AfterARPQ, MAXLENGTH 200)
+  //      -> IPPrint()
         -> Queue 
 	-> rrs
 	-> ToDevice(br0)
@@ -65,7 +66,7 @@ fd_cl[2] -> CheckIPHeader(14)
         -> tun
 
 //Forward IP packet not meant for the host
-ipc[1] -> Queue -> [2]rrs
+ipc[1] -> Queue -> Print(forwarding)->[2]rrs
 
 //Anything else from device
 fd_cl[3] -> tun
