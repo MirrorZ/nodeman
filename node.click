@@ -17,7 +17,7 @@
 */
 
 AddressInfo(
-	REAL_IP 192.168.42.111,
+	REAL_IP 192.168.42.10,
 //	REAL_MAC AC-72-89-25-05-30,
 //	REAL_MAC 00-18-F3-81-1A-B5,
 //	REAL_MAC E8-94-F6-26-25-A5,
@@ -73,7 +73,7 @@ fh_cl[1] -> IPPrint(HostIP)
 	 -> Queue
 	 -> [0]rrs1	
 
-gs[1]	 -> SetIPAddress(192.168.42.129)          // route via gateway (Router's address)
+gs[1]	 -> SetIPAddress(192.168.42.1)          // route via gateway (Router's address)
 	 -> Queue
 	 -> [1]rrs1
 
@@ -108,7 +108,7 @@ t[1] -> tun;
 fd_cl[2] -> CheckIPHeader(14)
         // check for responses from the test network
 //        -> ipc :: IPClassifier(src net 192.168.42.1/24, -)
-	->ipc :: IPClassifier(dst net 192.168.42.1/24, -)
+	->ipc :: IPClassifier(dst REAL_IP, -)
          // replace the real destination address with the fake address
         -> StoreIPAddress(FAKE_IP, 30)
         -> FixChecksums
