@@ -1,0 +1,30 @@
+Bridge
+=======
+
+* set up mesh0 
+* eth0/usb0 down
+* mesh0 down
+* make bridge br0
+* up br0 eth0/usb0
+* dhclient/dhcpcd br0
+  (Check if br0 works)
+* join mesh
+* check station dump
+
+* flush ip route
+* run bridge.click as root (assuming the IP and MAC addresses are correct)
+* add tun0 IP address as default
+
+
+
+Node
+=====
+
+* set up mesh0
+* join
+* check station dump
+* dhclient/dhcpcd mesh0
+
+* flush ip route
+* run node.click as root (assuming the IP and MAC addresses are correct)
+* add tap0 IP address as default
