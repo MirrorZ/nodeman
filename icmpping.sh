@@ -20,6 +20,8 @@ do
 	echo "Packetloss : ${packetloss}"
         avgrtt=$(echo "${output}" | awk '/rtt/ {split($4,a,/\//);print a[2]}')
 	echo "${i}: $avgrtt ms"
+		host_unreachable_count=$(echo $output | grep -c 'unreachable');
+	echo "host_unreachable_count: ${host_unreachable_count}"
 done
 
 #-------------------------------BW-------------------------------
