@@ -36,7 +36,7 @@ public:
 
     const char *class_name() const		{ return "GatewaySelector"; }
     const char *port_count() const		{ return "3/3"; }
-    const char *processing() const		{ return PUSH; }
+    const char *processing() const		{ return AGNOSTIC; }
 
     int configure(Vector<String> &, ErrorHandler *);
 
@@ -56,7 +56,8 @@ private:
         // int metric;
     };
 
-    static std::map< std::string, struct GateInfo > resolved_gates, unresolved_gates;
+    typedef std::map< std::string, struct GateInfo > mapping_table;
+    mapping_table resolved_gates, unresolved_gates;
 
     void process_rann(Packet *p);
     void process_pong(Packet *p);

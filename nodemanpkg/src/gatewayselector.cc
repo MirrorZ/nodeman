@@ -9,12 +9,13 @@
 #include <click/etheraddress.hh>
 #include "gatewayselector.hh"
 
+#include <string>
 
 CLICK_DECLS
 
 //FILE * gate_data_file = fopen("/home/sudipto/clk/gate_data", "w");
 
-static std::map< std::string, struct GateInfo > GatewaySelector::resolved_gates, GatewaySelector::unresolved_gates;
+//std::map< std::string, struct GateInfo > GatewaySelector::resolved_gates, GatewaySelector::unresolved_gates;
 
 GatewaySelector::GatewaySelector()
     : _print_anno(false),
@@ -39,13 +40,19 @@ GatewaySelector::configure(Vector<String> &conf, ErrorHandler* errh)
   return ret;
 }
 
-std::string address_to_string(uint8_t address[])
+std::string mac_to_string(uint8_t address[])
 {
   char macStr[18];
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
          address[0], address[1], address[2], address[3], address[4], address[5]);
   return std::string(macStr);
+}
 
+std::string ip_to_string(uint8_t ip[])
+{
+	char ipStr[16];
+	sprintf(ipStr, "%d.%d.%d.%d\n",ip[0],ip[1],ip[2],ip[3]);
+	return std::string(ipStr);
 }
 
 /*
@@ -111,9 +118,15 @@ void GatewaySelector::process_rann(Packet *p)
     ptr++;
   }
 
-  gate_info.mac_address = address_to_string(root_sta_address);
+  gate_info.mac_address = mac_to_string(root_sta_address);
 
   unresolved_gates[gate_info.mac_address] = gate_info;
+	
+	mapping_table::iterator it;
+	printf("unresolved_gates(%d):\n",unresolved_gates.size());
+	for(it = unresolved_gates.begin(); it!=unresolved_gates.end(); ++it) {
+		printf("%s\n",(it->first).c_str());
+	}
 
   //fprintf(gate_data_file, "%s\n", s.c_str());
 
@@ -121,13 +134,72 @@ void GatewaySelector::process_rann(Packet *p)
 
 }
 
-GatewaySelector::process_pong(Packet * p)
+void GatewaySelector::process_pong(Packet * p)
 {
   // process pong here
   // 1. extract mac, ip and metric in pong
   // 2. look for mac as key in unresolved_gates map
   // 3. update the corresponding gate_info structure.
   // 4. Remove the gate_info struct from unresolved and put it in resolved.
+	uint8_t dest_mac[6], src_mac[6], ip[4];
+	
+	uint8_t *ptr = NULL;
+	
+	if(p->has_mac_header()) {
+		ptr = (uint8_t *)p->mac_header();
+		
+		for(int i=0; i<6; i++) {
+			dest_mac[i] = *ptr;
+			ptr++;
+		}
+		
+		for(int i=0; i<6; i++) {
+			src_mac[i] = *ptr;
+			ptr++;
+		}
+
+		//skip protocol code
+		ptr+=2;
+		
+		for(int i=0; i<4; i++) {
+			ip[i] = *ptr;
+			ptr++;
+		}
+		
+		std::string dest_mac_string = mac_to_string(src_mac);
+		std::string src_mac_string = mac_to_string(dest_mac);
+		std::string ip_string = ip_to_string(ip);
+		
+		printf("src_mac: %s\ndest_mac: %s\nip: %s\n",
+					 dest_mac_string.c_str(),
+					 src_mac_string.c_str(),
+					 ip_string.c_str()
+					);
+		
+		// Find this gate's entry using its mac address which is the source mac address
+		mapping_table::iterator it = unresolved_gates.find(src_mac_string);
+		
+		if(it != unresolved_gates.end()) {
+			struct GateInfo this_gate = it->second;
+			this_gate.ip_address = ip_string;
+			// put metrics and other stuff
+			
+			unresolved_gates.erase(it);
+			resolved_gates[this_gate.mac_address] = this_gate;
+		}
+		
+		printf("resolved_gates(%d):\n",resolved_gates.size());
+		for(it = resolved_gates.begin(); it!=resolved_gates.end(); ++it) {
+			printf("%s\n",(it->first).c_str());
+		}
+		
+		printf("unresolved_gates(%d):\n",unresolved_gates.size());
+		for(it = unresolved_gates.begin(); it!=unresolved_gates.end(); ++it) {
+			printf("%s\n",(it->first).c_str());
+		}
+		
+	}
+	
 }
 
 
@@ -137,15 +209,15 @@ void GatewaySelector::push(int port, Packet *p)
   {
     case 0: /* Pong arrives here */
       process_pong(p);
-      outputs(0).push(p);
+      output(0).push(p);
       break;
     case 1: /* Rann arrives here */
       process_rann(p);
-      outputs(1).push(p);
+      output(1).push(p);
       break;
     case 2: /* Normal packets from this node arrive here*/
       // decide gateway for this packet, modify and push it out
-      outputs(2).push(p);
+      output(2).push(p);
       break;
   }
 }
