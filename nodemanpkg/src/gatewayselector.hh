@@ -2,6 +2,7 @@
 #define CLICK_GATEWAY_SELECTOR_HH
 #include <click/element.hh>
 #include <click/string.hh>
+#include <click/timer.hh>
 
 #include <set>
 #include <map>
@@ -35,11 +36,13 @@ public:
     ~GatewaySelector();
 
     const char *class_name() const		{ return "GatewaySelector"; }
-    const char *port_count() const		{ return "3/3"; }
-    const char *processing() const		{ return AGNOSTIC; }
+    const char *port_count() const		{ return "3/4"; }
+    const char *processing() const		{ return PUSH; }
 
     int configure(Vector<String> &, ErrorHandler *);
 
+		int initialize(ErrorHandler *errh);
+		void run_timer(Timer *timer);
     void push(int port, Packet *p);
 
     bool _print_anno;
@@ -59,8 +62,14 @@ private:
     typedef std::map< std::string, struct GateInfo > mapping_table;
     mapping_table resolved_gates, unresolved_gates;
 
+		Timer _macping_timer;
+		Packet * macping_packet;
+		
+		std::string interface_mac_address;
+		
     void process_rann(Packet *p);
     void process_pong(Packet *p);
+		Packet * make_macping_packet(struct GateInfo);
 };
 
 CLICK_ENDDECLS
