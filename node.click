@@ -17,7 +17,7 @@
 */
 
 AddressInfo(
-	REAL_IP 192.168.42.22,
+	REAL_IP 192.168.42.11,
 	REAL_NETWORK 192.168.42.1/24,
 //	REAL_MAC AC-72-89-25-05-30,
 //	REAL_MAC 00-18-F3-81-1A-B5,
@@ -38,7 +38,7 @@ tun :: KernelTap(FAKE_NETWORK, ETHER FAKE_MAC)
 aq :: ARPQuerier(REAL_IP, mesh0);
 ar :: ARPResponder(0/0 1:1:1:1:1:1);
 fh_cl :: Classifier(12/0806, 12/0800)
-fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, -)
+fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, 12/0700, -)
 fd :: FromDevice(mesh0, SNIFFER false)
 rrs :: RoundRobinSched()
 //rrs2 :: RoundRobinSched()
@@ -55,9 +55,6 @@ elementclass FixChecksums {
 }
 
 tun -> fh_cl; //Print(ComingFromTun) -> fh_cl;
-
-//((wlan.sa[0:3] == e8:de:27) || (wlan.sa[0:3] == c0:4a:00))&& !(wlan.da == ff:ff:ff:ff:ff:ff)
-//((wlan.sa[0:3] == e8:de:27) || (wlan.sa[0:3] == c0:4a:00) || (wlan.sa[0:3] == 94:db:c9)) && !(wlan.da == ff:ff:ff:ff:ff:ff)
 
 //ARP request from Host
 fh_cl[0] -> ar -> tun;
@@ -77,12 +74,12 @@ fh_cl[1] //-> IPPrint(HostIP)
 	 -> [0]rrs1	
 
 gs[1]	 -> portclassifier :: IPClassifier(src port & 1 == 1, -)
-	 -> Print(Routing1, MAXLENGTH 200)
+//	 -> Print(Routing1, MAXLENGTH 200)
 	 -> SetIPAddress(192.168.42.1)          // route via gateway (Router's address)
 	 -> Queue
 	 -> [1]rrs1
 
-portclassifier[1] -> Print(Routing129, MAXLENGTH 200)
+portclassifier[1] //-> Print(Routing129, MAXLENGTH 200)
 		  -> SetIPAddress(192.168.42.129)
 		  -> Queue
 		  -> [2]rrs1
@@ -130,5 +127,9 @@ fd_cl[2] -> CheckIPHeader(14)
 //Forward IP packet not meant for the host
 
 ipc[1] -> Discard;
+
+//Broadcasts coming from Gate using mac-ping (Replacement for mon0 as too many packets)
+fd_cl[3] -> Print("GateBroadcasted : ") -> Discard;
+
 //Anything else from device
-fd_cl[3] -> tun
+fd_cl[4] -> tun
