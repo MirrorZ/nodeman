@@ -1,4 +1,23 @@
 Nodeman - Nodemanager for the WMN
+Go with the flow!
 
-You know what it does (for now).
+Right now, from what can be observed, These are the scripts that are being used : 
+
+node.click -> Runs on a node and handles all the activites of that node. Also listens for any upcoming broadcasts from the gates to update the gate table 
+accordingly. It also decides which gate to route the outbound traffic to using our QoS processing , which just does it on an even - odd source port basis for 
+now.
+
+bridge.click - Runs on a gate which is bridged to an external gateway and routes the traffic to external worlds for the internal network. If any NAT is 
+required, this seems like a place to do it. 
+
+mac-ping.click - Modified now to change what it was originally intended to do. It broadcasts L2 packets and usually is meant to run on the gate. The gate's IP
+address is embedded in the packet. Any additional metrics that are required to be sent can be just appended to the end of the generated	packet. 
+
+
+Other than this, some developer notes regarding the scripts : 
+
+#) Regarding the fluid gates and dynamic addition : 
+	One element which serves as the container for gates and the MAC-IP Binding.
+	One element which when supplied the mac-ip-broadcasts using mac-ping.click builds up the table.
+	One element which reads the gateway table and selects a gate on the basis of QoS and source port.
 
