@@ -120,19 +120,19 @@
 \end{indentation}
 \vspace{0.5cm}
 \begin{indentation}{0pt}{0pt}{0pt}
-{\normalsize \hspace{1cm} The devised solution makes use of all gateways present in the Wireless Mesh Network. The packets are categorized on a per flow basis and not on a per packet basis as it helps us not worry about deep packet inspection in order to determine the correct path. Since a single flow of packets is categorized by open ports in the sender as well as the receiver, we use the source port on the sender as a unique key for relating to a specific flow. This helps preserve the sanity of applications as well as they expect all packets of the same flow to be recieved on the same port.}
+{\normalsize \hspace{1cm} The devised solution makes use of all gateways present in the Wireless Mesh Network. The packets are categorized on a per flow basis and not on a per packet basis as it helps us not worry about deep packet inspection in order to determine the correct path. Since a single flow of packets is categorized by open ports in the sender as well as the receiver, we use the source port on the sender as a unique key for relating to a specific flow. This helps preserve the sanity of applications as well as meet their expectations of seeing all packets of the same flow on the same port.}
 \end{indentation}
 
 
 \begin{indentation}{0pt}{0pt}{0pt}
-{\normalsize \hspace{1cm} A gate is a machine which is connected to the mesh network using a wireless interface and has an internet connection available on another interface. Both these interfaces are bridged in order to make use of both the mesh capabilities as well as the Internet capabilities simultaneously. Traffic originating within the mesh network is routed using one of the available gate
+  {\normalsize \hspace{1cm} A gate is a machine which is connected to the mesh network using a wireless interface and has an internet connection available on another interface. Both these interfaces are bridged in order to make use of both the mesh capabilities as well as the Internet capabilities simultaneously. The gate broadcasts it's ability to perform as a gate by periodically sending out L2 packets containing it's IP address among other metrics. Traffic originating within the mesh network which is destined for an external network is routed using one of the available gates. The gateway is selected based on metrics such as the hop count and available link capacity. Traffic destined for the local network is not routed through the gate, and never leaves the local network. The concept of a fluid mesh which is used to denote arbitrary movement of nodes and gates in and out of the mesh is simulated by taking down a gate and letting it come back online later. In the scenario where a gate fails, the specific gate is not used to route traffic unless it broadcasts it's presence and the ability to route externally.
 
 While the total and available bandwidth help in deciding the load on the mesh gate, the latency which also takes into account the hop count while routing to the gateway is a critical factor in routing http and VoIP traffic. Network capacity can increase linearly with the number of gateways only with proper load balancing and resource provisioning. This kind of proper association, which prevents the formation of bottlenecks and distributes the network load evenly realizes the linear capacity increase. Packets meant for the external networks are routed through one of the available gateways and therefore the next hop is set to that specific gateway. For packets meant for the internal network, the next hop is set to the destination itself as the nodes are available in the link local network and are therefore reachable without requiring the use of any gateway.}
 \end{indentation}
 
 
 \begin{indentation}{0pt}{0pt}{0pt}
-{\normalsize \hspace{1cm} Through experimental setups using Click modular router it is demonstrable that unless the underlying hardware link capacity does not become the bottleneck, linear gain in the network throughput can be seen.}
+{\normalsize \hspace{1cm} Through experimental setups using Click modular router it is demonstrable that unless the underlying hardware link capacity becomes the bottleneck, linear gain in the network takes place.}
 \end{indentation}
 
 \pagebreak
