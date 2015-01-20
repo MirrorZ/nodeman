@@ -138,7 +138,7 @@
 {\normalsize \hspace{1cm} Through experimental setups using Click modular router it is demonstrable that unless the underlying hardware link capacity becomes the bottleneck, linear gain in the network takes place.}
 \end{indentation}
 
-\begin{figure}[t]
+\begin{figure}[h]
   \centering
     \includegraphics[scale=0.50]{ExperimentLayout}
     \caption{Experiment to show linear gain in the network.}

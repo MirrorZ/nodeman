@@ -10,8 +10,7 @@
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{lipsum}
-\usepackage{setspace}
+
 
 \title{}
 \usepackage[paperwidth=595pt,paperheight=841pt,top=72pt,right=72pt,bottom=72pt,left=72pt]{geometry}
@@ -27,7 +26,7 @@
 
 % new LaTeX commands
 
-\renewcommand{\baselinestretch}{1.5} 
+
 \begin{document}
 
 \pagenumbering{gobble}
@@ -126,11 +125,9 @@
 
 
 \begin{indentation}{0pt}{0pt}{0pt}
-  {\normalsize \hspace{1cm} A gate is a machine which is connected to the mesh network using a wireless interface and has an internet connection available on another interface. Both these interfaces are bridged in order to make use of both the mesh capabilities as well as the Internet capabilities simultaneously. The gate broadcasts it's ability to perform as a gate by periodically sending out L2 packets containing it's IP address among other metrics. Traffic originating within the mesh network which is destined for an external network is routed using one of the available gates. The gateway is selected based on metrics such as the hop count and available link capacity. Traffic destined for the local network is not routed through the gate, and never leaves the local network.} 
-\end{indentation}
+  {\normalsize \hspace{1cm} A gate is a machine which is connected to the mesh network using a wireless interface and has an internet connection available on another interface. Both these interfaces are bridged in order to make use of both the mesh capabilities as well as the Internet capabilities simultaneously. The gate broadcasts it's ability to perform as a gate by periodically sending out L2 packets containing it's IP address among other metrics. Traffic originating within the mesh network which is destined for an external network is routed using one of the available gates. The gateway is selected based on metrics such as the hop count and available link capacity. Traffic destined for the local network is not routed through the gate, and never leaves the local network. The concept of a fluid mesh which is used to denote arbitrary movement of nodes and gates in and out of the mesh is simulated by taking down a gate and letting it come back online later. In the scenario where a gate fails, the specific gate is not used to route traffic unless it broadcasts it's presence and the ability to route externally.
 
-\begin{indentation}{0pt}{0pt}{0pt}
-{\normalsize \hspace{1cm}While the total and available bandwidth help in deciding the load on the mesh gate, the latency which also takes into account the hop count while routing to the gateway is a critical factor in routing http and VoIP traffic. Network capacity can increase linearly with the number of gateways only with proper load balancing and resource provisioning. This kind of proper association, which prevents the formation of bottlenecks and distributes the network load evenly realizes the linear capacity increase.}
+While the total and available bandwidth help in deciding the load on the mesh gate, the latency which also takes into account the hop count while routing to the gateway is a critical factor in routing http and VoIP traffic. Network capacity can increase linearly with the number of gateways only with proper load balancing and resource provisioning. This kind of proper association, which prevents the formation of bottlenecks and distributes the network load evenly realizes the linear capacity increase. Packets meant for the external networks are routed through one of the available gateways and therefore the next hop is set to that specific gateway. For packets meant for the internal network, the next hop is set to the destination itself as the nodes are available in the link local network and are therefore reachable without requiring the use of any gateway.}
 \end{indentation}
 
 
@@ -143,23 +140,21 @@
     \includegraphics[scale=0.50]{ExperimentLayout}
     \caption{Experiment to show linear gain in the network.}
     \label{Diagram: Experiment layout}
-\end{figure}
-\vspace*{1cm}
-\begin{figure}[b]
+    \vspace{0.1cm}
     \centering
-    \includegraphics[scale=0.35]{ExperimentGraph}
+    \includegraphics[scale=0.4]{ExperimentGraph}
     \caption{Results of the experiment.}
     \label{Graph: Result}
 \end{figure}
-
-%\pagebreak
+\pagebreak
 \begin{indentation}{0pt}{0pt}{0pt}
+\vspace{200cm}  
 \textbf{{{\Large Result and Discussion}}}
 \end{indentation}
 \vspace{0.5cm}
 
 \begin{indentation}{0pt}{0pt}{0pt}
-  {\normalsize \hspace{1cm} The diagram above shows the layout of the machines used for the experiment. The link capacities on either sides of both GW1 and GW2 are kept identical and varied from 100 KBPS to 1400 KBPS. Downloads were performed for each value of link speed once with GW1, once with GW2 and once with GW1 and GW2 simultaenously. The graph below was created with experimental readings and it clearly shows  gain in the network when download times are considered. Starting with a linear fashion, the gains become constant as the link speed approaches the link speed of the underlying hardware link.}
+{\normalsize \hspace{1cm} The project is able to achieve a higher throughput in the wireless mesh network by effectively utilizing the capabilities of the gateways in the network. Contrary to the earlier approaches of using multiple interfaces and packet aggregation, this approach makes use of a single interface for achieving substantial gain in the capacity of the network and therefore implies no additional overhead cost for setting up a second interface on another network card.}
 \end{indentation}
 
 \begin{indentation}{0pt}{0pt}{0pt}
