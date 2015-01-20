@@ -137,26 +137,33 @@ While the total and available bandwidth help in deciding the load on the mesh ga
 
 \begin{figure}[t]
   \centering
-    \includegraphics[scale=0.60]{ExperimentLayout}
+    \includegraphics[scale=0.50]{ExperimentLayout}
     \caption{Experiment to show linear gain in the network.}
     \label{Diagram: Experiment layout}
-    \vspace{0.1cm}
+\end{figure}
+\vspace*{5cm}
+\begin{figure}[b]
     \centering
-    \includegraphics[scale=0.4]{ExperimentGraph}
+    \includegraphics[scale=0.35]{ExperimentGraph}
     \caption{Results of the experiment.}
     \label{Graph: Result}
 \end{figure}
+\pagebreak
 
+\pagebreak
 \begin{indentation}{0pt}{0pt}{0pt}
-\vspace{200cm}  
 \textbf{{{\Large Result and Discussion}}}
 \end{indentation}
 \vspace{0.5cm}
 
 \begin{indentation}{0pt}{0pt}{0pt}
-{\normalsize \hspace{1cm} The project is able to achieve a higher throughput in the wireless mesh network by effectively utilizing the capabilities of the gateways in the network. Contrary to the earlier approaches of using multiple interfaces and packet aggregation, this approach makes use of a single interface for achieving substantial gain in the capacity of the network and therefore implies no additional overhead cost for setting up a second interface on another network card.}
+  {\normalsize \hspace{1cm} The diagram above shows the layout of the machines used for the experiment. The link capacities on either sides of both GW1 and GW2 are kept identical and varied from 100 KBPS to 1400 KBPS. Downloads were performed for each value of link speed once with GW1, once with GW2 and once with GW1 and GW2 simultaenously. The graph below was created with experimental readings and it clearly shows  gain in the network when download times are considered. Starting with a linear fashion, the gains become constant as the link speed approaches the link speed of the underlying hardware link.}
 \end{indentation}
 
+\begin{indentation}{0pt}{0pt}{0pt}
+{\normalsize \hspace{1cm} The project is able to achieve a higher throughput in the wireless mesh network by effectively utilizing the capabilities of the gateways in the network. Contrary to the earlier approaches of using multiple interfaces and packet aggregation, this approach makes use of a single interface for achieving substantial gain in the capacity of the network and therefore implies no additional overhead cost for setting up a second interface on another network card.}
+\end{indentation}
+\pagebreak
 \begin{indentation}{0pt}{0pt}{0pt}
 {\normalsize \hspace{1cm} Scenarios in which the number and type of gates keep changing such as a fluid mesh created due to the interaction of several mobile devices require special attention and demand to be handled as a part of the solution. In the case where a mesh gate is added to the network, the nodes should be able to make use of the new capabilities as soon as possible. Although it seems fairly straightforward to accommodate a new gate, the problem is that some flows which were mapped previously to the gateways that already existed may get mapped to the new gateway during a transaction. This will lead to a loss of data as the machine present on the other side of the gateways does not recognize the new gateway and will simply drop the packets as they are sent. For this, a mechanism to cache and to "remember" which flows are mapped to which gateways is required. This cache can simply forget about the association after terminal packets such as a TCP FIN in case of TCP connections are detected. This approach makes possible the addition of gates dynamically without resulting in packet loss for the existing network.}
 \end{indentation}
