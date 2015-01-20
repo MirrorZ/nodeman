@@ -10,7 +10,7 @@ TCP_IP = '192.168.42.5'
 TCP_PORT = 80
 BUFFER_SIZE = 1024
 MESSAGE = "Hello, World!"
-START_PORT = 46000
+START_PORT = 48000
 
 sl = []   
 fx = []
