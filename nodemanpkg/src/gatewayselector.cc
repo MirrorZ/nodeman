@@ -77,6 +77,15 @@ void GatewaySelector::run_timer(Timer *timer)
 		      it = gates.erase(it);
 		    }
 		}
+		vector<PortCache>::iterator iter;
+		for(iter = port_cache_table.begin(); iter != port_cache_table.end(); ++iter) {
+		  
+		  if((*iter.timestamp - time(NULL)) > 60)
+		    {
+		      printf("Removing entry for port no. %d\n", *iter->src_port);
+		      iter = port_cache_table.erase(iter);
+		    }
+		}
 		
 		_master_timer.reschedule_after_sec(GATES_REFRESH_INTERVAL);		
 }
