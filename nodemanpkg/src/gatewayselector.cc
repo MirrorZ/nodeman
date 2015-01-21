@@ -232,18 +232,15 @@ void GatewaySelector::process_pong(Packet * p)
   // 2. look for mac as key in unresolved_gates map
   // 3. update the corresponding gate_info structure.
   // 4. Remove the gate_info struct from unresolved and put it in resolved.
-	uint8_t dest_mac[6], src_mac[6], ip[4];
+	uint8_t src_mac[6], ip[4];
 	
 	uint8_t *ptr = NULL;
 	
 	if(p->has_mac_header()) {
 		ptr = (uint8_t *)p->mac_header();
-		
-		for(int i=0; i<6; i++) {
-			dest_mac[i] = *ptr;
-			ptr++;
-		}
-		
+		//Skip destination as it should be a broadcast address
+		ptr+= 6;
+		//Skip to source mac address
 		for(int i=0; i<6; i++) {
 			src_mac[i] = *ptr;
 			ptr++;
@@ -251,29 +248,28 @@ void GatewaySelector::process_pong(Packet * p)
 
 		//skip protocol code
 		ptr+=2;
-		
+		//extract ipv4
 		for(int i=0; i<4; i++) {
 			ip[i] = *ptr;
 			ptr++;
 		}
 		
-		std::string dest_mac_string = mac_to_string(src_mac);
 		std::string src_mac_string = mac_to_string(dest_mac);
 		std::string ip_string = ip_to_string(ip);
 		
 		printf("----Data from pong------\n");
-		printf("src_mac: %s\ndest_mac: %s\nip: %s\n",
-					 dest_mac_string.c_str(),
+		printf("src_mac: %s\nnip: %s\n",					
 					 src_mac_string.c_str(),
 					 ip_string.c_str()
 					);
 		printf("------------------------\n");
 		
 		// Find this gate's entry using its mac address which is the source mac address
-		mapping_table::iterator it = unresolved_gates.find(src_mac_string);
+		mapping_table::iterator it = gates.find(src_mac_string);
 		
 		if(it != unresolved_gates.end()) {
-			struct GateInfo this_gate = it->second;
+		  if
+		  struct GateInfo this_gate = it->second;
 			this_gate.ip_address = ip_string;
 			// put metrics and other stuff
 			

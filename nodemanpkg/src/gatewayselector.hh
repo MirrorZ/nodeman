@@ -59,17 +59,17 @@ private:
         // int metric;
     };
 
-    typedef std::map< std::string, struct GateInfo > mapping_table;
-    mapping_table resolved_gates, unresolved_gates;
+  typedef std::map< std::string, struct GateInfo > mapping_table;
+  mapping_table gates;
 
-		Timer _macping_timer;
-		Packet * macping_packet;
+  Timer _macping_timer;
+  Packet * macping_packet;
+  
+  std::string interface_mac_address;
 		
-		std::string interface_mac_address;
-		
-    void process_rann(Packet *p);
-    void process_pong(Packet *p);
-		Packet * make_macping_packet(struct GateInfo);
+  void process_rann(Packet *p);
+  void process_pong(Packet *p);
+  Packet * make_macping_packet(struct GateInfo);
 };
 
 CLICK_ENDDECLS
