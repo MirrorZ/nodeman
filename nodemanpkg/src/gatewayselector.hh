@@ -3,7 +3,7 @@
 #include <click/element.hh>
 #include <click/string.hh>
 #include <click/timer.hh>
-
+#include <timer.h>
 #include <set>
 #include <vector>
 #include <string>
@@ -58,8 +58,15 @@ private:
         int timestamp;
         // int metric;
     };
-
+   struct PortCache {
+        uint16_t src_port;
+        IPAddress gate_ip;
+        time_t timestamp;
+    }; 
+  
   typedef std::vector<struct GateInfo > mapping_table;
+  typedef std::vector<struct PortCache > port_cache_table;
+  port_cache_table cache_table;
   mapping_table gates;
 
   Timer _master_timer;
@@ -68,6 +75,13 @@ private:
   std::string interface_mac_address;
 		
   void process_pong(Packet *p);
+ 
+  Packet * select_gate(Packet *p);
+  // Packet * make_macping_packet(struct GateInfo);
+  IPAddress cache_lookup(uint16_t);
+  Packet * set_ip_address(Packet *, IPAddress);
+  IPAddress find_gate(uint16_t);
+  void cache_update(uint16_t, IPAddress);
 };
 
 CLICK_ENDDECLS
