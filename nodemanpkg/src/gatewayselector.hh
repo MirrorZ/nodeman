@@ -4,6 +4,8 @@
 #include <click/string.hh>
 #include <click/timer.hh>
 
+#include <time.h>
+
 #include <set>
 #include <vector>
 #include <string>
@@ -55,12 +57,11 @@ private:
     struct GateInfo {
         std::string mac_address;
         std::string ip_address;
-        int timestamp;
+        time_t timestamp;
         // int metric;
     };
 
-  typedef std::vector<struct GateInfo > mapping_table;
-  mapping_table gates;
+  std::vector<GateInfo> gates;
 
   Timer _master_timer;
   Packet * macping_packet;

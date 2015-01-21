@@ -119,8 +119,7 @@ void GatewaySelector::process_pong(Packet * p)
   // 2. look for mac as key in unresolved_gates map
   // 3. update the corresponding gate_info structure.
   // 4. Remove the gate_info struct from unresolved and put it in resolved.
-	uint8_t src_mac[6], ip[4];
-	
+	uint8_t src_mac[6], src_ip[4];	
 	uint8_t *ptr = NULL;
 	
 	if(p->has_mac_header()) {
@@ -137,45 +136,62 @@ void GatewaySelector::process_pong(Packet * p)
 		ptr+=2;
 		//extract ipv4
 		for(int i=0; i<4; i++) {
-			ip[i] = *ptr;
+			src_ip[i] = *ptr;
 			ptr++;
 		}
 		
 		std::string src_mac_string = mac_to_string(dest_mac);
-		std::string ip_string = ip_to_string(ip);
+		std::string src_ip_string = ip_to_string(src_ip);
 		
 		printf("----Data from pong------\n");
-		printf("src_mac: %s\nnip: %s\n",					
+		printf("src_mac: %s\nnsrc_ip: %s\n",					
 					 src_mac_string.c_str(),
-					 ip_string.c_str()
+					 src_ip_string.c_str()
 					);
 		printf("------------------------\n");
 		
 		// Find this gate's entry using its mac address which is the source mac address
-		mapping_table::iterator it = gates.find(src_mac_string);
 		
-		if(it != gates.end()) {
-		  
-		  struct GateInfo this_gate = it->second;
-			this_gate.ip_address = ip_string;
-			// put metrics and other stuff
+		std::vector<GateInfo>::iterator it;
+
+		for(it = gates.begin(); it!=gates.end(); it++)
+		  {
+		    if(*it.mac_address == src_mac_string)
+		      {
+			if(*it.ip_address != src_ip_string)
+			  {			
+			    printf("Warning: IP address changed from %s to %s for host MAC %s\n",
+				   *it.ip_address.c_str(), src_ip_string.c_str(),
+				   src_mac_string.c_str());
+			    
+			    *it,ip_address = src_ip_string; 
+			  }
 			
-			unresolved_gates.erase(it);
-			resolved_gates[this_gate.mac_address] = this_gate;
+			*it.timestamp = time(NULL);
+			break;
+		      }
+		  }
+
+		//New gate discovered
+		if(it == gates.end()) {
+		  GateInfo *new_gate = new GateInfo;
+		  new_gate.ip_address = src_ip_string;
+		  new_gate.mac_address = src_mac_address;
+		  new_gate.timestamp = time(NULL);
+		  
+		  // put metrics when extending this function here
+
+		  gates.push_back(new_gate);		  
 		}
-		
-		printf("resolved_gates(%d):\n",resolved_gates.size());
-		for(it = resolved_gates.begin(); it!=resolved_gates.end(); ++it) {
-			printf("%s\n",(it->first).c_str());
-		}
-		
-		printf("unresolved_gates(%d):\n",unresolved_gates.size());
-		for(it = unresolved_gates.begin(); it!=unresolved_gates.end(); ++it) {
-			printf("%s\n",(it->first).c_str());
-		}
-		
+
+		//Printing the list of gates. Drop this later.
+		printf("gates(%d):\n",gates.size());
+		for(it = gates.begin(); it!=gates.end(); ++it) {
+		  printf("%s -> %s\n",(*it -> mac_address).c_str(), (*it -> ip_address).c_str());
+		}				
 	}
-	
+	else
+	  printf("Malformed packet received without header!\n");		
 }
 
 
