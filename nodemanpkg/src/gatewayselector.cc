@@ -47,28 +47,6 @@ GatewaySelector::GatewaySelector()
       _macping_timer(this)
 {
     _label = "";
-		std::string path = "/sys/class/net/" + INTERFACE + "/address";
-		FILE * fp = fopen(path.c_str(), "r");
-		if(fp != NULL) {
-			char interface_mac[18];
-			if(fscanf(fp, "%s", interface_mac) == 1) {
-				interface_mac_address = std::string(interface_mac);
-			} else {
-				printf("Address init failed. Error reading from %s\n", path.c_str());
-			}
-			fclose(fp);
-		} else {
-			printf("Address init failed!\n");
-		}
-		
-		
-		//Sample unresolved gate
-		struct GateInfo gate_info;
-		gate_info.mac_address = "ac:72:89:25:05:30";
-		unresolved_gates[gate_info.mac_address] = gate_info;
-		
-		
-		macping_packet = NULL;
 }
 
 GatewaySelector::~GatewaySelector()

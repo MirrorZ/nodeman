@@ -63,9 +63,7 @@ private:
 
   std::vector<GateInfo> gates;
 
-  Timer _master_timer;
-  Packet * macping_packet;
-  
+  Timer _master_timer;  
   std::string interface_mac_address;
 		
   void process_pong(Packet *p);
