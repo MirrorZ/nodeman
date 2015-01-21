@@ -38,7 +38,7 @@ public:
     ~GatewaySelector();
 
     const char *class_name() const		{ return "GatewaySelector"; }
-    const char *port_count() const		{ return "3/4"; }
+    const char *port_count() const		{ return "2/2"; }
     const char *processing() const		{ return PUSH; }
 
     int configure(Vector<String> &, ErrorHandler *);
@@ -54,14 +54,14 @@ public:
 private:
     String _label;
 
-    struct GateInfo {
-        std::string mac_address;
-        std::string ip_address;
-        time_t timestamp;
-        // int metric;
-    };
+	struct GateInfo {
+			std::string mac_address;
+			std::string ip_address;
+			time_t timestamp;
+			// int metric;
+	};
 
- struct PortCache {
+	struct PortCache {
         uint16_t src_port;
         IPAddress gate_ip;
         time_t timestamp;
