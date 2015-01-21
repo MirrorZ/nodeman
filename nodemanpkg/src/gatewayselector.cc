@@ -100,40 +100,6 @@ void GatewaySelector::run_timer(Timer *timer)
 		_macping_timer.reschedule_after_sec(MAC_PING_TIME_INTERVAL);
 }
 
-Packet * GatewaySelector::make_macping_packet(struct GateInfo gate_info)
-{
-	uint8_t data[20];
-	int ptr = 0;
-	
-	//put macs and protocol code.
-	uint8_t src_mac[6], dest_mac[6];
-	string_to_mac(interface_mac_address, src_mac);
-	string_to_mac(gate_info.mac_address, dest_mac);
-	
-	for(int i=0;i<6;i++) {
-		 data[ptr] = dest_mac[i];
-		 ptr++;
-	}
-	for(int i=0;i<6;i++) {
-		data[ptr] = src_mac[i];
-		ptr++;
-	}
-	
-	//protocol code
-	data[ptr] =  0x07;
-	ptr++;
-	data[ptr] = 0x00;
-	ptr++;
-	
-	// additional data (?)
-	for(int i=0;i<4;i++) {
-		data[ptr] = 0x11;
-		ptr++;
-	}
-	
-	return Packet::make(data, ptr);
-}
-
 int
 GatewaySelector::configure(Vector<String> &conf, ErrorHandler* errh)
 {
@@ -267,8 +233,8 @@ void GatewaySelector::process_pong(Packet * p)
 		// Find this gate's entry using its mac address which is the source mac address
 		mapping_table::iterator it = gates.find(src_mac_string);
 		
-		if(it != unresolved_gates.end()) {
-		  if
+		if(it != gates.end()) {
+		  
 		  struct GateInfo this_gate = it->second;
 			this_gate.ip_address = ip_string;
 			// put metrics and other stuff
