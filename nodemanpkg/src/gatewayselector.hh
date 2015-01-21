@@ -5,7 +5,7 @@
 #include <click/timer.hh>
 
 #include <set>
-#include <map>
+#include <vector>
 #include <string>
 
 CLICK_DECLS
@@ -55,21 +55,19 @@ private:
     struct GateInfo {
         std::string mac_address;
         std::string ip_address;
-        int age;
+        int timestamp;
         // int metric;
     };
 
-  typedef std::map< std::string, struct GateInfo > mapping_table;
+  typedef std::vector<struct GateInfo > mapping_table;
   mapping_table gates;
 
-  Timer _macping_timer;
+  Timer _master_timer;
   Packet * macping_packet;
   
   std::string interface_mac_address;
 		
-  void process_rann(Packet *p);
   void process_pong(Packet *p);
-  Packet * make_macping_packet(struct GateInfo);
 };
 
 CLICK_ENDDECLS

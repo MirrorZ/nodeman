@@ -100,40 +100,6 @@ void GatewaySelector::run_timer(Timer *timer)
 		_macping_timer.reschedule_after_sec(MAC_PING_TIME_INTERVAL);
 }
 
-Packet * GatewaySelector::make_macping_packet(struct GateInfo gate_info)
-{
-	uint8_t data[20];
-	int ptr = 0;
-	
-	//put macs and protocol code.
-	uint8_t src_mac[6], dest_mac[6];
-	string_to_mac(interface_mac_address, src_mac);
-	string_to_mac(gate_info.mac_address, dest_mac);
-	
-	for(int i=0;i<6;i++) {
-		 data[ptr] = dest_mac[i];
-		 ptr++;
-	}
-	for(int i=0;i<6;i++) {
-		data[ptr] = src_mac[i];
-		ptr++;
-	}
-	
-	//protocol code
-	data[ptr] =  0x07;
-	ptr++;
-	data[ptr] = 0x00;
-	ptr++;
-	
-	// additional data (?)
-	for(int i=0;i<4;i++) {
-		data[ptr] = 0x11;
-		ptr++;
-	}
-	
-	return Packet::make(data, ptr);
-}
-
 int
 GatewaySelector::configure(Vector<String> &conf, ErrorHandler* errh)
 {
@@ -144,85 +110,6 @@ GatewaySelector::configure(Vector<String> &conf, ErrorHandler* errh)
       .read("TIMESTAMP", _timestamp)
       .complete();
   return ret;
-}
-
-/*
-  Processes the rann frame and keeps mac addresses in the unresolved_gates map.
-*/
-void GatewaySelector::process_rann(Packet *p)
-{
-  uint8_t *ptr;
-  uint8_t root_sta_address[6];
-  struct GateInfo gate_info;
-
-  struct click_wifi *w = (struct click_wifi *) p->data();
-  StringAccum sa;
-
-  // Skip the 24byte Action Frame. struct click_wifi is 24 bytes long.
-  ptr = (uint8_t *) (w+1);
-
-  //The IEEE 802.11 WLAN mgmt frame starts
-  int category_code = *ptr;
-  ptr++;
-
-  sa << " category_code: " << category_code;
-  sa << "\n";
-  
-  int mesh_action_code = *ptr;
-  ptr++;
-
-  sa << " mesh_action_code: "<< mesh_action_code;
-  sa << "\n";
-
-  // Tagged parameters
-  int tag_number = *ptr;
-  ptr++;
-  
-  sa << " tag_number: "<< tag_number;
-  sa << "\n";
-
-  int tag_length = *ptr;
-  ptr++;
-
-  sa << " tag_length: "<< tag_length;
-  sa << "\n";
-
-  int rann_flags = *ptr;
-  ptr++;
-
-  sa << " rann_flags: "<< rann_flags;
-  sa << "\n";
-
-  //printf("%s\n", sa.c_str());
-
-  // skip HWMP hop count
-  ptr++;
-
-  //skip HWMP TTL
-  ptr++;
-
-  //fprintf(gate_data_file, "gate: ");
-
-  for(int i=0; i<6; i++)
-  {
-    root_sta_address[i] = *ptr;
-    ptr++;
-  }
-
-  gate_info.mac_address = mac_to_string(root_sta_address);
-
-  unresolved_gates[gate_info.mac_address] = gate_info;
-	
-	mapping_table::iterator it;
-	printf("unresolved_gates(%d):\n",unresolved_gates.size());
-	for(it = unresolved_gates.begin(); it!=unresolved_gates.end(); ++it) {
-		printf("%s\n",(it->first).c_str());
-	}
-
-  //fprintf(gate_data_file, "%s\n", s.c_str());
-
-  // skipping the rest: ROOT STA seq number, RANN interval, HWMP metric
-
 }
 
 void GatewaySelector::process_pong(Packet * p)
@@ -267,8 +154,8 @@ void GatewaySelector::process_pong(Packet * p)
 		// Find this gate's entry using its mac address which is the source mac address
 		mapping_table::iterator it = gates.find(src_mac_string);
 		
-		if(it != unresolved_gates.end()) {
-		  if
+		if(it != gates.end()) {
+		  
 		  struct GateInfo this_gate = it->second;
 			this_gate.ip_address = ip_string;
 			// put metrics and other stuff
