@@ -75,7 +75,6 @@ void GatewaySelector::run_timer(Timer *timer)
 		    {
 		      printf("Removing gate %s\n", *it->ip_address);
 		      it = gates.erase(it);
-
 		    }
 		}
 		
@@ -180,13 +179,16 @@ void GatewaySelector::process_pong(Packet * p)
 void GatewaySelector::push(int port, Packet *p)
 {
   switch(port)
-  {
+    {
     case 0: /* Normal packet for setting the gateway */
       p = select_gate(p);
       output(0).push(p);
       break;
-  case 1: break;
-  }
+      
+    case 1:
+      process_pong(p);    
+      break;
+    }
 }
 
 Packet *select_gate(Packet *p)
@@ -213,6 +215,7 @@ IPAddress cache_lookup(uint16_t src_port)
     if(it.src_port == src_port)
       return it.gate_ip;
   }
+  
   return 0.0.0.0;    
 }
 
