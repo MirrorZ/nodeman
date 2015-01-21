@@ -62,7 +62,7 @@ private:
   typedef std::vector<struct GateInfo > mapping_table;
   mapping_table gates;
 
-  Timer _macping_timer;
+  Timer _master_timer;
   Packet * macping_packet;
   
   std::string interface_mac_address;
