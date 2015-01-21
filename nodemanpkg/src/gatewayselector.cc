@@ -13,7 +13,7 @@
 
 CLICK_DECLS
 
-#define MAC_PING_TIME_INTERVAL 5 // in seconds
+#define GATES_REFRESH_INTERVAL 60 // in seconds
 std::string INTERFACE = "wlan0"; // TODO: pass this as a config parameter to the element
 
 //FILE * gate_data_file = fopen("/home/sudipto/clk/gate_data", "w");
@@ -44,7 +44,7 @@ void string_to_mac(std::string mac_string, uint8_t address[])
 GatewaySelector::GatewaySelector()
     : _print_anno(false),
       _print_checksum(false),
-      _macping_timer(this)
+      _master_timer(this)
 {
     _label = "";
 }
@@ -55,27 +55,31 @@ GatewaySelector::~GatewaySelector()
 
 int GatewaySelector::initialize(ErrorHandler *)
 {
-		_macping_timer.initialize(this);
-		_macping_timer.schedule_now();
+		_master_timer.initialize(this);
+		_master_timer.schedule_now();
 		return 0;
 }
 
 void GatewaySelector::run_timer(Timer *timer)
 {
-		assert(timer == &_macping_timer);
+		assert(timer == &_master_timer);
 		Timestamp now = Timestamp::now_steady();
+
+		// clean_gates_table();
+		// clean_cache_table();
 		
-		mapping_table::iterator it;
-		for(it = unresolved_gates.begin(); it != unresolved_gates.end(); ++it) {
-			if(macping_packet) macping_packet->kill();
-			if(macping_packet = make_macping_packet(it->second)) {
-				output(3).push(macping_packet);
-				printf("MacPinged gate: %s\n",(it->second).mac_address.c_str());
-			} else {
-				printf("Invalid macping packet\n");
-			}
+		vector<GateInfo>::iterator it;
+		for(it = gates.begin(); it != gates.end(); ++it) {
+		  
+		  if((*it.timestamp - time(NULL)) > 60)
+		    {
+		      printf("Removing gate %s\n", *it->ip_address);
+		      it = gates.erase(it);
+
+		    }
 		}
-		_macping_timer.reschedule_after_sec(MAC_PING_TIME_INTERVAL);
+		
+		_master_timer.reschedule_after_sec(GATES_REFRESH_INTERVAL);		
 }
 
 int
