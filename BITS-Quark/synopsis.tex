@@ -12,7 +12,11 @@
 \usepackage{amssymb}
 \usepackage{lipsum}
 \usepackage{setspace}
-
+%\usepackage{fontspec}
+%\usepackage[T1]{fontenc}
+%\usepackage[utf8]{inputenc}
+%\usepackage{mathptmx}
+%\setmainfont{Times New Roman}
 \title{}
 \usepackage[paperwidth=595pt,paperheight=841pt,top=72pt,right=72pt,bottom=72pt,left=72pt]{geometry}
 
@@ -26,8 +30,8 @@
 \makeatother 
 
 % new LaTeX commands
-
 \renewcommand{\baselinestretch}{1.5} 
+\renewcommand*{\familydefault}{\rmdefault}
 \begin{document}
 
 \pagenumbering{gobble}

@@ -61,12 +61,26 @@ private:
         // int metric;
     };
 
+ struct PortCache {
+        uint16_t src_port;
+        IPAddress gate_ip;
+        time_t timestamp;
+    }; 
+  
   std::vector<GateInfo> gates;
-
-  Timer _master_timer;  
+  std::vector<PortCache> port_cache_table;
+  
+  Timer _master_timer;
+ 
   std::string interface_mac_address;
 		
   void process_pong(Packet *p);
+ 
+  Packet * select_gate(Packet *p);
+  IPAddress cache_lookup(uint16_t);
+  Packet * set_ip_address(Packet *, IPAddress);
+  IPAddress find_gate(uint16_t);
+  void cache_update(uint16_t, IPAddress);
 };
 
 CLICK_ENDDECLS

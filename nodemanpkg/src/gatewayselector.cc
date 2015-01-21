@@ -181,19 +181,60 @@ void GatewaySelector::push(int port, Packet *p)
 {
   switch(port)
   {
-    case 0: /* Pong arrives here */
-      process_pong(p);
+    case 0: /* Normal packet for setting the gateway */
+      p = select_gate(p);
       output(0).push(p);
       break;
-    case 1: /* Rann arrives here */
-      process_rann(p);
-      output(1).push(p);
-      break;
-    case 2: /* Normal packets from this node arrive here*/
-      // decide gateway for this packet, modify and push it out
-      output(2).push(p);
-      break;
+  case 1: break;
   }
+}
+
+Packet *select_gate(Packet *p)
+{
+  IPAddress ip;
+  uint16_t *ptr = p->data();
+  ptr += 2;
+  uint16_t src_port = *ptr;
+  ip = cache_lookup(src_port);
+  if(ip == 0.0.0.0)
+  {
+    ip = find_gate(src_port);
+    cache_update(src_port,ip);
+  }
+  p = set_ip_address(p,ip);
+  return p;
+}
+
+IPAddress cache_lookup(uint16_t src_port)
+{
+  std::vector<port_cache_table>::iterator it = cache_table.begin();
+  while(it ! = cache_table.end())
+  {
+    if(it.src_port == src_port)
+      return it.gate_ip;
+  }
+  return 0.0.0.0;    
+}
+
+Packet *set_ip_address(Packet *p, IPAddress ip)
+{
+  p->set_anno_u32(_anno,ip);
+  return p;
+}
+
+IPAddress find_gate(uint16_t src_port)
+{
+  int index = src_port % gates.size();
+  return gates[index].ip_address;
+}
+
+void cache_update(uint16_t src_port, IPAddress ip)
+{
+  PortCache entry;
+  entry.src_port = src_port;
+  entry.gate_ip = ip;
+  entry.timestamp = 0;
+  cache_table.push_back(entry);
 }
 
 
