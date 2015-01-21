@@ -14,9 +14,7 @@
 CLICK_DECLS
 
 #define GATES_REFRESH_INTERVAL 60 // in seconds
-std::string INTERFACE = "wlan0"; // TODO: pass this as a config parameter to the element
-
-//FILE * gate_data_file = fopen("/home/sudipto/clk/gate_data", "w");
+#define STALE_ENTRY_THRESHOLD 60 //in seconds
 
 std::string mac_to_string(uint8_t address[])
 {
@@ -71,16 +69,17 @@ void GatewaySelector::run_timer(Timer *timer)
 		vector<GateInfo>::iterator it;
 		for(it = gates.begin(); it != gates.end(); ++it) {
 		  
-		  if((*it.timestamp - time(NULL)) > 60)
+		  if((*it.timestamp - time(NULL)) > STALE_ENTRY_THRESHOLD)
 		    {
 		      printf("Removing gate %s\n", *it->ip_address);
 		      it = gates.erase(it);
 		    }
 		}
+
 		vector<PortCache>::iterator iter;
 		for(iter = port_cache_table.begin(); iter != port_cache_table.end(); ++iter) {
 		  
-		  if((*iter.timestamp - time(NULL)) > 60)
+		  if((*iter.timestamp - time(NULL)) > STALE_ENTRY_THRESHOLD)
 		    {
 		      printf("Removing entry for port no. %d\n", *iter->src_port);
 		      iter = port_cache_table.erase(iter);
@@ -248,7 +247,6 @@ void cache_update(uint16_t src_port, IPAddress ip)
   entry.timestamp = 0;
   cache_table.push_back(entry);
 }
-
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(GatewaySelector)
