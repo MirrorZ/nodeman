@@ -58,22 +58,22 @@ elementclass FixChecksums {
 tun -> Print(ComingFromTun) -> fh_cl;
 
 //ARP request from Host
-fh_cl[0] -> Print(ARPRequest) -> ar -> Print(ARPResponse, MAXLENGTH 200) -> tun;
+fh_cl[0] -> Print(ARPRequestFromTun) -> ar -> Print(ARPResponseToTun, MAXLENGTH 200) -> tun;
 
 rrs1::RoundRobinSched()
 
 //IP from Host
-fh_cl[1] //-> IPPrint(HostIP)
- 	 -> Strip(14)				// remove crap Ether header
+fh_cl[1] -> Print(IPFromHost)
+ 	 -> Strip(14)			// remove crap Ether header
 //	 -> Print("BeforeStore", MAXLENGTH 200)	 
          -> MarkIPHeader(0)
          -> StoreIPAddress(REAL_IP, src)	// store real address as source (Host's IP address)
 //	 -> Print("AfterSstore", MAXLENGTH 200)
          -> FixChecksums                        // recalculate checksum
 	 -> gs :: IPClassifier(dst net REAL_NETWORK, -) 
-	 -> GetIPAddress(16)	   
+	 -> GetIPAddress(16)  
 	 -> Queue
-	 -> [0]rrs1	
+	 -> [0]rrs1
 
 gs[1] -> [0]gate_selector[0] -> Queue -> [1]rrs1
 
