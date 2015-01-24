@@ -13,8 +13,8 @@
 
 CLICK_DECLS
 
-#define GATES_REFRESH_INTERVAL 60 // in seconds
-#define STALE_ENTRY_THRESHOLD 60 //in seconds
+#define GATES_REFRESH_INTERVAL 6000 // in seconds
+#define STALE_ENTRY_THRESHOLD 6000 //in seconds
 
 std::string mac_to_string(uint8_t address[])
 {
@@ -44,7 +44,8 @@ GatewaySelector::GatewaySelector()
       _print_checksum(false),
       _master_timer(this)
 {
-    _label = "";
+  // _label = "";
+  //   click_chatter("Inside constructor. Leaving now \n");
 }
 
 GatewaySelector::~GatewaySelector()
@@ -53,25 +54,23 @@ GatewaySelector::~GatewaySelector()
 
 int GatewaySelector::initialize(ErrorHandler *)
 {
-		_master_timer.initialize(this);
-		_master_timer.schedule_now();
-		return 0;
+  //click_chatter("Initialize inside.");
+  _master_timer.initialize(this);
+  _master_timer.schedule_now();
+  return 0;
 }
 
 void GatewaySelector::run_timer(Timer *timer)
 {
 		assert(timer == &_master_timer);
 		Timestamp now = Timestamp::now_steady();
-
-		// clean_gates_table();
-		// clean_cache_table();
 		
 		std::vector<GateInfo>::iterator it;
 		for(it = gates.begin(); it != gates.end(); ++it) {
 		  
 		  if(((*it).timestamp - time(NULL)) > STALE_ENTRY_THRESHOLD)
 		    {
-		      printf("Removing gate %s\n", (*it).ip_address.c_str());
+		      //click_chatter("Removing gate %s\n", (*it).ip_address.c_str());
 		      it = gates.erase(it);
 		    }
 		}
@@ -81,7 +80,7 @@ void GatewaySelector::run_timer(Timer *timer)
 		  
 		  if(((*iter).timestamp - time(NULL)) > STALE_ENTRY_THRESHOLD)
 		    {
-		      printf("Removing entry for port no. %d\n", (*iter).src_port);
+		      //click_chatter("Removing entry for port no. %d\n", (*iter).src_port);
 		      iter = port_cache_table.erase(iter);
 		    }
 		}
@@ -93,6 +92,9 @@ int
 GatewaySelector::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   int ret;
+\
+  //click_chatter("Inside configure. ");
+  
   _timestamp = false;
   ret = Args(conf, this, errh)
       .read_p("LABEL", _label)
@@ -110,7 +112,9 @@ void GatewaySelector::process_pong(Packet * p)
   // 4. Remove the gate_info struct from unresolved and put it in resolved.
 	uint8_t src_mac[6], src_ip[4];	
 	uint8_t *ptr = NULL;
-	
+
+	//click_chatter("Inside process_pong\n");
+
 	if(p->has_mac_header()) {
 		ptr = (uint8_t *)p->mac_header();
 		//Skip destination as it should be a broadcast address
@@ -132,12 +136,12 @@ void GatewaySelector::process_pong(Packet * p)
 		std::string src_mac_string = mac_to_string(src_mac);
 		std::string src_ip_string = ip_to_string(src_ip);
 		
-		printf("----Data from pong------\n");
-		printf("src_mac: %s\nnsrc_ip: %s\n",					
-					 src_mac_string.c_str(),
-					 src_ip_string.c_str()
-					);
-		printf("------------------------\n");
+		//click_chatter("----Data from pong------\n");
+		//click_chatter("src_mac: %s\nnsrc_ip: %s\n",					
+		// src_mac_string.c_str(),
+		//			 src_ip_string.c_str()
+		//			);
+		//click_chatter("------------------------\n");
 		
 		// Find this gate's entry using its mac address which is the source mac address
 		
@@ -149,9 +153,9 @@ void GatewaySelector::process_pong(Packet * p)
 			{
 				if((*it).ip_address != src_ip_string)
 				{			
-					printf("Warning: IP address changed from %s to %s for host MAC %s\n",
-						(*it).ip_address.c_str(), src_ip_string.c_str(),
-						src_mac_string.c_str());
+					//click_chatter("Warning: IP address changed from %s to %s for host MAC %s\n",
+				  //						(*it).ip_address.c_str(), src_ip_string.c_str(),
+				  //		src_mac_string.c_str());
 					
 					(*it).ip_address = src_ip_string; 
 				}
@@ -173,54 +177,87 @@ void GatewaySelector::process_pong(Packet * p)
 		}
 
 		//Printing the list of gates. Drop this later.
-		printf("gates(%d):\n",gates.size());
+		//click_chatter("gates(%d):\n",gates.size());
+
 		for(it = gates.begin(); it!=gates.end(); ++it) {
-		  printf("%s -> %s\n",((*it).mac_address).c_str(), ((*it).ip_address).c_str());
+		  //click_chatter("%s -> %s\n",((*it).mac_address).c_str(), ((*it).ip_address).c_str());
 		}				
 	}
 	else
-	  printf("Malformed packet received without header!\n");		
+	  click_chatter("Malformed packet received without header!\n");		
 }
 
 
 void GatewaySelector::push(int port, Packet *p)
 {
+  //click_chatter("Inside push()\n");
   switch(port)
     {
     case 0: /* Normal packet for setting the gateway */
+      //click_chatter("case 0 : select_gate\n");
       p = select_gate(p);
       output(0).push(p);
       break;
       
     case 1:
+      //click_chatter("case 1 : process_pong\n");		   
       process_pong(p);
-			output(1).push(p); // Do something with this packet
+      // output(1).push(p); // Do something with this packet
       break;
     }
 }
 
+/*
+TODO : Function is mostly broken for the scenario when no gates exist.
+Find a way to associate an error handler which gracefully drops the packet
+instead of the ugly hack used right now
+*/
+
 Packet * GatewaySelector::select_gate(Packet *p)
 {
   IPAddress ip;
-	if(p->has_transport_header())
+  //click_chatter("Inside select_gate function");
+
+  if(p->has_transport_header())
+    {
+      //click_chatter("Yes, Has a transport header");
+      uint8_t *ptr = (uint8_t *)p->transport_header();
+      // Need a better way to extract src port
+      // maybe ntohs(tcp_header->th_sport) where tcp_header is a struct click_tcp object.
+      uint16_t src_port = 0;
+      src_port += *ptr;
+      ptr++;
+      src_port << 8;
+      src_port += *ptr;
+      //click_chatter("src port is : %" PRIu16 "\n",src_port );
+      
+      ip = cache_lookup(src_port);
+      
+      if(ip == IPAddress(String("0.0.0.0")))
 	{
-		uint8_t *ptr = (uint8_t *)p->transport_header();
-		// Need a better way to extract src port
-		// maybe ntohs(tcp_header->th_sport) where tcp_header is a struct click_tcp object.
-		uint16_t src_port = 0;
-		src_port += *ptr;
-		ptr++;
-		src_port << 8;
-		src_port += *ptr;
-		ip = cache_lookup(src_port);
-		if(ip == IPAddress(String("0.0.0.0")))
-		{
-			ip = find_gate(src_port);
-			cache_update(src_port,ip);
-		}
-		p = set_ip_address(p,ip);
-		return p;
+	  //click_chatter("IP 0.0.0.0");
+	  ip = find_gate(src_port);
+
+	  if(ip == IPAddress(String("0.0.0.0")))
+	    {
+	      goto NoGatesFound;
+	    }
+	  else
+	    {
+	    cache_update(src_port,ip);	  
+	    //click_chatter("Cache updated.");
+	    
+	    }
 	}
+      else
+	{
+	  //	click_chatter("IP NOT 0.0.0.0");    
+	}
+      
+      p = set_ip_address(p,ip);
+NoGatesFound:      
+      return p;
+    }
 }
 
 IPAddress GatewaySelector::cache_lookup(uint16_t src_port)
@@ -243,8 +280,17 @@ Packet * GatewaySelector::set_ip_address(Packet *p, IPAddress ip)
 
 IPAddress GatewaySelector::find_gate(uint16_t src_port)
 {
-  int index = src_port % gates.size();
-  return IPAddress(String((gates[index].ip_address).c_str()));
+  int index;
+
+  if(gates.size() > 0)
+    {
+      index = src_port % gates.size();  
+      return IPAddress(String((gates[index].ip_address).c_str()));
+    }
+  else
+    {
+      return IPAddress(String("0.0.0.0"));
+    }
 }
 
 void GatewaySelector::cache_update(uint16_t src_port, IPAddress ip)
