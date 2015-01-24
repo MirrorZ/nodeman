@@ -142,7 +142,7 @@ void GatewaySelector::process_pong(Packet * p)
 		//			 src_ip_string.c_str()
 		//			);
 		//click_chatter("------------------------\n");
-		
+		click_chatter("Added %s with %s", src_ip_string.c_str(), src_mac_string.c_str()); 
 		// Find this gate's entry using its mac address which is the source mac address
 		
 		std::vector<GateInfo>::iterator it;
@@ -190,11 +190,11 @@ void GatewaySelector::process_pong(Packet * p)
 
 void GatewaySelector::push(int port, Packet *p)
 {
-  //click_chatter("Inside push()\n");
+  click_chatter("Inside push()\n");
   switch(port)
     {
     case 0: /* Normal packet for setting the gateway */
-      //click_chatter("case 0 : select_gate\n");
+      click_chatter("Calling case 0 : select_gate\n");
       p = select_gate(p);
       output(0).push(p);
       break;
@@ -216,11 +216,11 @@ instead of the ugly hack used right now
 Packet * GatewaySelector::select_gate(Packet *p)
 {
   IPAddress ip;
-  //click_chatter("Inside select_gate function");
+  click_chatter("Inside select_gate function");
 
   if(p->has_transport_header())
     {
-      //click_chatter("Yes, Has a transport header");
+      click_chatter("Yes, Has a transport header");
       uint8_t *ptr = (uint8_t *)p->transport_header();
       // Need a better way to extract src port
       // maybe ntohs(tcp_header->th_sport) where tcp_header is a struct click_tcp object.
@@ -229,7 +229,7 @@ Packet * GatewaySelector::select_gate(Packet *p)
       ptr++;
       src_port << 8;
       src_port += *ptr;
-      //click_chatter("src port is : %" PRIu16 "\n",src_port );
+      click_chatter("src port is : %" PRIu16 "\n",src_port );
       
       ip = cache_lookup(src_port);
       
@@ -253,7 +253,7 @@ Packet * GatewaySelector::select_gate(Packet *p)
 	{
 	  //	click_chatter("IP NOT 0.0.0.0");    
 	}
-      
+      click_chatter("Calling set_ip_address");
       p = set_ip_address(p,ip);
 NoGatesFound:      
       return p;
@@ -263,17 +263,26 @@ NoGatesFound:
 IPAddress GatewaySelector::cache_lookup(uint16_t src_port)
 {
   std::vector<PortCache>::iterator it = port_cache_table.begin();
+
+  click_chatter("Inside cache_lookup");
+
   while(it != port_cache_table.end())
   {
     if((*it).src_port == src_port)
-      return (*it).gate_ip;
+      {
+ 	click_chatter("Returning gate ip from cache as : %s", ((*it).gate_ip).unparse().c_str());
+	return (*it).gate_ip;
+      }
+    ++it;
   }
   
+  click_chatter("Returning from cache 0.0.0.0");
   return IPAddress(String("0.0.0.0"));
 }
 
 Packet * GatewaySelector::set_ip_address(Packet *p, IPAddress ip)
 {
+  click_chatter("Calling set_ip_address");
   p->set_dst_ip_anno(ip); // is setting annotation fine or we should use set_ip_header()?
   return p;
 }
