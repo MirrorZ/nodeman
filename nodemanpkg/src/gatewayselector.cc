@@ -113,7 +113,7 @@ void GatewaySelector::process_pong(Packet * p)
 	uint8_t src_mac[6], src_ip[4];	
 	uint8_t *ptr = NULL;
 
-	//click_chatter("Inside process_pong\n");
+	click_chatter("Inside process_pong\n");
 
 	if(p->has_mac_header()) {
 		ptr = (uint8_t *)p->mac_header();
@@ -202,6 +202,7 @@ void GatewaySelector::push(int port, Packet *p)
     case 1:
       //click_chatter("case 1 : process_pong\n");		   
       process_pong(p);
+      p -> kill();
       // output(1).push(p); // Do something with this packet
       break;
     }
