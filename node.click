@@ -17,7 +17,7 @@
 */
 
 AddressInfo(
-	REAL_IP 192.168.42.137,
+	REAL_IP 192.168.42.11,
 	REAL_NETWORK 192.168.42.1/24,
 //	REAL_MAC AC-72-89-25-05-30,
 //	REAL_MAC 00-18-F3-81-1A-B5,
@@ -41,8 +41,6 @@ fh_cl :: Classifier(12/0806, 12/0800)
 fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, 12/0700, -)
 fd :: FromDevice(mesh0, SNIFFER false)
 rrs :: RoundRobinSched()
-gate_selector::GatewaySelector()
-
 //rrs2 :: RoundRobinSched()
 
 elementclass FixChecksums {
@@ -75,7 +73,16 @@ fh_cl[1] //-> IPPrint(HostIP)
 	 -> Queue
 	 -> [0]rrs1	
 
-gs[1]    -> [1]gate_selector[1] -> Queue -> [1]rrs1
+gs[1]	 -> portclassifier :: IPClassifier(src port & 1 == 1, -)
+//	 -> Print(Routing1, MAXLENGTH 200)
+	 -> SetIPAddress(192.168.42.1)          // route via gateway (Router's address)
+	 -> Queue
+	 -> [1]rrs1
+
+portclassifier[1] //-> Print(Routing129, MAXLENGTH 200)
+		  -> SetIPAddress(192.168.42.129)
+		  -> Queue
+		  -> [2]rrs1
 
 rrs1 -> pt::PullTee -> Discard
 
@@ -122,7 +129,7 @@ fd_cl[2] -> CheckIPHeader(14)
 ipc[1] -> Discard;
 
 //Broadcasts coming from Gate using mac-ping (Replacement for mon0 as too many packets)
-fd_cl[3] -> Print("GateBroadcasted : ") -> gate_selector -> Discard;
+fd_cl[3] -> Print("GateBroadcasted : ") -> Discard;
 
 //Anything else from device
 fd_cl[4] -> tun
