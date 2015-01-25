@@ -26,19 +26,20 @@ $FAKE_ETH	ETH of the Fake Device (KernelTAP)
 $FAKE_NETWORK   Network of the Fake Device (Assumed /24)
 */
 
-AddressInfo(
-	REAL_IP 192.168.42.99,
-	REAL_NETWORK 192.168.42.1/24,
-//	REAL_MAC AC-72-89-25-05-30,
-//	REAL_MAC 00-18-F3-81-1A-B5,
-//	REAL_MAC E8-94-F6-26-25-A5,
-//	REAL_MAC 02-61-67-30-68-59,
-//	REAL_MAC C0-4A-00-23-BA-BD,
-//	REAL_MAC E8-DE-27-09-06-20,
-	REAL_MAC C4-6E-1F-11-C1-E9,
-	FAKE_IP 10.0.0.1,
-	FAKE_MAC 1A-2B-3C-4D-5E-6F,
-	FAKE_NETWORK 10.0.0.1/8)
+// AddressInfo(
+// 	REAL_IP 192.168.42.99,
+// 	REAL_NETWORK 192.168.42.1/24,
+// //	REAL_MAC AC-72-89-25-05-30,
+// //	REAL_MAC 00-18-F3-81-1A-B5,
+// //	REAL_MAC E8-94-F6-26-25-A5,
+// //	REAL_MAC 02-61-67-30-68-59,
+// //	REAL_MAC C0-4A-00-23-BA-BD,
+// //	REAL_MAC E8-DE-27-09-06-20,
+// 	REAL_MAC C4-6E-1F-11-C1-E9,
+// 	//FAKE_IP 10.0.0.1,
+// 	FAKE_MAC 1A-2B-3C-4D-5E-6F,
+// 	//FAKE_NETWORK 10.0.0.1/8
+// 	)
 
 // Takes traffic from kernel through Kernel tap and sends it to eth0
 
@@ -46,7 +47,7 @@ kernel_tap :: KernelTap($FAKE_NETWORK, ETHER $FAKE_ETH)
 
 //Add host's IP address
 
-real_arp_handler :: ARPQuerier($MESH_IP_ADDR, $MESH_IFNAME);
+real_arp_handler :: ARPQuerier($MESH_IP_ADDR, $MESH_ETH);
 fake_arp_responder :: ARPResponder(0/0 01:01:01:01:01:01);
 self_arp_responder :: ARPResponder($MESH_IP_ADDR $MESH_ETH)
 

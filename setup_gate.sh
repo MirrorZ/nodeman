@@ -1,28 +1,33 @@
 #!/bin/bash
 
-if [ $# -ne 4 ]; then
-    echo "Usage : # ./setup_gate wlanX meshY <other-bridge-interface> <bridge>"
-    exit 1
-fi
+# if [ $# -ne 4 ]; then
+#     echo "Usage : # ./setup_gate wlanX meshY <other-bridge-interface> <bridge>"
+#     exit 1
+# fi
+
+WLAN_IF=$1
+MESH_IF=$2
+OTHER_BR=$3
+BR_IF=$4
 
 echo "Setting up the gate."
-iw dev $1 interface add $2 type mp
+iw dev $WLAN_IF interface add $MESH_IF type mp
 
-ifconfig $1 down
+ifconfig $WLAN_IF down
 #echo "Putting down $3 and $2"
-ifconfig $2 down
-ifconfig $3 down
+ifconfig $MESH_IF down
+ifconfig $OTHER_BR down
 
 #echo "Creating bridge"
-brctl addbr $4
-brctl addif $4 $3 $2
-ifconfig $3 up
+brctl addbr $BR_IF
+brctl addif $BR_IF $OTHER_BR $MESH_IF
+ifconfig $OTHER_BR up
 
 #echo "Waiting for IP Address assignment on bridge"
-dhcpcd $4
+dhclient $BR_IF
 
 #echo "Joining mesh <ID> openmesh"
-ifconfig $1 down
-ifconfig $2 up
-iw dev $2 mesh join openmesh
+ifconfig $WLAN_IF down
+ifconfig $MESH_IF up
+iw dev $MESH_IF mesh join openmesh
 echo "Done."
