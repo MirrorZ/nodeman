@@ -15,6 +15,17 @@
 	# ip route add default via 10.0.0.1
 
 */
+
+/*
+$MESH_IFNAME	Name of the mesh interface
+$MESH_IP_ADDR 	IP of the mesh interface
+$MESH_NETWORK   Network of the mesh network (Assumed /24)
+$MESH_ETH	ETH of the mesh interface 
+$FAKE_IP	IP of the Fake Device (KernelTAP)
+$FAKE_ETH	ETH of the Fake Device (KernelTAP)
+$FAKE_NETWORK   Network of the Fake Device (Assumed /24)
+*/
+
 AddressInfo(
 	REAL_IP 192.168.42.99,
 	REAL_NETWORK 192.168.42.1/24,
@@ -31,18 +42,18 @@ AddressInfo(
 
 // Takes traffic from kernel through Kernel tap and sends it to eth0
 
-kernel_tap :: KernelTap(FAKE_NETWORK, ETHER FAKE_MAC)
+kernel_tap :: KernelTap($FAKE_NETWORK, ETHER $FAKE_ETH)
 
 //Add host's IP address
 
-real_arp_handler :: ARPQuerier(REAL_IP, mesh0);
+real_arp_handler :: ARPQuerier($MESH_IP_ADDR, $MESH_IFNAME);
 fake_arp_responder :: ARPResponder(0/0 01:01:01:01:01:01);
-self_arp_responder :: ARPResponder(REAL_IP REAL_MAC)
+self_arp_responder :: ARPResponder($MESH_IP_ADDR $MESH_ETH)
 
 fh_cl :: Classifier(12/0806 20/0001, 12/0800, -)
 fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, 12/0700, -)
 
-fd :: FromDevice(mesh0, SNIFFER false)
+fd :: FromDevice($MESH_IFNAME, SNIFFER false)
 rrs :: RoundRobinSched()
 gate_selector :: GatewaySelector()
 
@@ -75,7 +86,7 @@ rrs1::RoundRobinSched()
 fh_cl[1] //-> Print(IPFromHostPING?, MAXLENGTH 98)
  	 -> Strip(14)				// remove crap Ether header
          -> MarkIPHeader(0)
-         -> StoreIPAddress(REAL_IP, src)	// store real address as source (Host's IP address)
+         -> StoreIPAddress($MESH_IP_ADDR, src)	// store real address as source (Host's IP address)
          -> FixChecksums                        // recalculate checksum
 
 /* 
@@ -83,10 +94,10 @@ fh_cl[1] //-> Print(IPFromHostPING?, MAXLENGTH 98)
 	in both cases. Then they are combined back using a roundrobin and a pulltee. This seems like unnecessary overhead.
 	A possibly better way seems to be that we pass both local and remote into the GatewaySelector (differnet input ports) and then
 	let the selector set the appropriate annotation. Once annotations are set, both kinds of packets should be sent out on
-	the output[0] which is directly connected to ToDevice(mesh0) element, thereby reducing a lot of unnecessary overhead.	
+	the output[0] which is directly connected to ToDevice($MESH_IFNAME) element, thereby reducing a lot of unnecessary overhead.	
 */
 
-	 -> gs :: IPClassifier(dst net REAL_NETWORK, -)
+	 -> gs :: IPClassifier(dst net $MESH_NETWORK, -)
 	 -> GetIPAddress(16)
 	 -> Queue(1)
 	 -> [0]rrs1
@@ -123,7 +134,7 @@ pt[1]	 -> [0]real_arp_handler
 //	 -> IPPrint() 
 	 -> Queue -> [0]rrs;
 
-rrs -> ToDevice(mesh0);
+rrs -> ToDevice($MESH_IFNAME);
 //rrs2 -> pt :: PullTee[1] ->[0]real_arp_handler -> Queue -> [0]rrs;
 //pt[0] -> Discard;
 
@@ -151,13 +162,13 @@ fd_cl[2] -> Print(IPFromDevice, MAXLENGTH 200)
 	 -> CheckIPHeader(14)
          // check for responses from the test network
 	 //        -> ipc :: IPClassifier(src net 192.168.42.1/24, -)
-	 ->ipc :: IPClassifier(dst REAL_IP, -)
+	 ->ipc :: IPClassifier(dst $MESH_IP_ADDR, -)
           // replace the real destination address with the fake address
-         -> StoreIPAddress(FAKE_IP, 30)
+         -> StoreIPAddress($FAKE_IP, 30)
          -> FixChecksums
 	  //	-> Print(fd_cl2, MAXLENGTH 200)
 	 -> Strip(14)
-	 -> EtherEncap(0x0800, REAL_MAC, FAKE_MAC)
+	 -> EtherEncap(0x0800, $MESH_ETH, $FAKE_ETH)
          -> kernel_tap
 
 //Do not Forward IP packets not meant for the host
