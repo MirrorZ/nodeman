@@ -194,9 +194,16 @@ void GatewaySelector::push(int port, Packet *p)
   switch(port)
     {
     case 0: /* Normal packet for setting the gateway */
-      click_chatter("Calling case 0 : select_gate\n");
+      click_chatter("Calling case 0 : select_gate\n");      
       p = select_gate(p);
-      output(0).push(p);
+
+      if((p->dst_ip_anno()).unparse() == "0.0.0.0")
+	{
+	  click_chatter("IP Address is 0.0.0.0. Pushing on [1]");
+	  output(1).push(p);
+	}
+      else
+	output(0).push(p);
       break;
       
     case 1:
@@ -230,7 +237,7 @@ Packet * GatewaySelector::select_gate(Packet *p)
       ptr++;
       src_port << 8;
       src_port += *ptr;
-      click_chatter("src port is : %" PRIu16 "\n",src_port );
+      click_chatter("src port is : %" PRIu16 "\n",src_port);
       
       ip = cache_lookup(src_port);
       
@@ -239,26 +246,14 @@ Packet * GatewaySelector::select_gate(Packet *p)
 	  //click_chatter("IP 0.0.0.0");
 	  ip = find_gate(src_port);
 
-	  if(ip == IPAddress(String("0.0.0.0")))
-	    {
-	      goto NoGatesFound;
-	    }
-	  else
-	    {
-	    cache_update(src_port,ip);	  
-	    //click_chatter("Cache updated.");
-	    
-	    }
+	  if(ip != IPAddress(String("0.0.0.0")))
+	    cache_update(src_port,ip);
 	}
-      else
-	{
-	  //	click_chatter("IP NOT 0.0.0.0");    
-	}
-      click_chatter("Calling set_ip_address");
+      
       p = set_ip_address(p,ip);
-NoGatesFound:      
       return p;
     }
+  
 }
 
 IPAddress GatewaySelector::cache_lookup(uint16_t src_port)
