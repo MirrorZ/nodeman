@@ -6,6 +6,8 @@ if [ -z $packet_recv ]; then
 	echo "${mac_addr}"
 	usb_ifconfig=$(ifconfig usb0)
 	usb_mac_addr=$(echo "${usb_ifconfig}" | awk '/HWaddr/ {print $5} ')	
+	echo ${usb_mac_addr}
+	ebtables -t nat -P PREROUTING DROP
 	ebtables -t nat -A PREROUTING -p arp --arp-opcode Request --arp-mac-src ${mac_addr} -j arpreply --arpreply-mac ${usb_mac_addr}
 else
 	echo "Network Unreachable"
