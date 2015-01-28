@@ -27,16 +27,16 @@ The overall throughput in a wireless mesh network can be increased by using mult
 
 IMPLEMENTATION AND PERFORMANCE EVALUATION
 
-In order to efficiently utilize all available bandwidth in a WMN, various  gate discovery, multipoint to multipoint associations, dynamic addition and removal of gateways 
+In order to efficiently utilize all available bandwidth in a WMN, various measures such as gate discovery, multipoint to multipoint associations, dynamic addition and removal of gateways, selection of gateways and fault tolerance need to be considered.
 
-Advertisement of the gateway in MAC Frame broadcasted
-Conventionally in open80211s, the presence of mesh gates is detected by a gate flag in the broadcasted Root Announcement frames. Although this is sufficient for getting to know the MAC address of a gate, it does not provide any information about the gate's Layer3 address. In order to tackle this, in the solution, each gate now sends out a broadcast which contains it's MAC address as well as IP Address, which allows nodes to maintain their IP and ETH mappings for gates in the network.
+Advertisement of the gateway capbilities
+Conventionally in open80211s, the presence of mesh gates is detected by a gate flag in the broadcasted Root Announcement frames. In our solution, the mesh gate timely broadcasts it's IP address and the set of capabilties. This information is used by the mesh nodes to maintain a record for each gateway, which is further used for gateway selection. 
 
-Multigateway association which is decided by GatewaySelector for every new flow
-Every time a mesh node wants to start sending a new stream of data (socket) to a machine outside the local network, it does so via the best possible gate selected on the basis of metrics and the type of information required to be sent. The node has a list of all gateways it can use to serve it's external network needs and decides one accordingly. The gateway annotation on the packets pertaining to this flow are set to the chosen gateway. This flow is now bound to the gateway and will continue until all the data has been transferred.
+Multi-gateway association
+Every time a mesh node wants to start sending a new stream of data (socket creation) to a machine outside the local network, it does so via the best possible gate selected on the basis of the gate metrics and the type of information required to be sent. The node uses the available gateway records to decide the ideal gateway to be selected based on the kind of egress traffic. The gateway annotation on the packets pertaining to this flow are set to the chosen gateway. The flow is bound to the gateway and this mapping exists till the socket is transferring data. In case a gateway fails, all it's mappings are discarded.
 
-Flow is identified with source port number
-A unique key is required to differentiate different flows from one another. Since a source port on a machine can only be used by one flow at a time, it serves as a unique identifier. Using the source port number, it can be known which flow a particular packet belongs to, thereby respecting the requirement of sending all packets of a specific flow through one gateway.
+Flow Identification
+A unique key is required to differentiate flows from one another. Since a source port on a machine can only be used by one flow at a time, it serves as a unique identifier. The source port number is used to identify which packet belongs to which flow, thereby respecting the requirement of sending all packets of a specific flow through one gateway eliminating the overhead of packet reassembly.
 
 #Stickiness is defined for pre existing flows so that a new gate coming up does not change the gateway
 Addition and removal of gates dynamically
@@ -46,21 +46,15 @@ While the flow of packets are being routed through the specific gateway, more ga
 
 In case a gateway goes down, no traffic destined for the outside network should be routed via it. The disppearance of a gate has been accounted for by the missing Layer 2 broadcasts received by the nodes. The nodes wait for a specified time out interval, after which the entry for a non broadcasting gate is removed. In case the gate comes back up, it will start broadcasting frames again and therefore can be used again for servicing requests.
 
-ebtables hook for identical IP addresses
-All gates present on the network will have IP addresses associated with them. The gates can be a variety of devices, including but not limited to wired routers, smartphones and USB based dongles. Some vendors do not allow users to change the IP addresses of these devices. In case two or more devices have identical hard coded IP addresses, it leads to IP related conflicts and also disrupts the flow of packets as routing becomes ambiguous. In order to combat this situation, an ARP proxy has been included which allows the assignment of unique IP addresses to machines on the network even if they have identical vendor enforced IP addresses.
-
-Adds L3 routing capabilities to existing L2 routing capabilities
-The underlying o11s implementation uses the Hybrid Wireless Mesh Protocol for routing at the Layer 2. While this is sufficient for routing packets in a single association network, it is quickly evident that such a scheme is not feasible if multiple associations are to be exploited. This is mainly due to the insufficient Layer3 information that is present with nodes participating in L2 routing using HWMP. This has been accounted for by making the gates broadcast their own IP addresses. These broadcast messagaes, when received by nodes, help them map IP addresses to ethernet addresses and therefore use the mesh's underlying routing capabilities along with some consideration for the layer above.
-
 Interoperability
 The solution has been created with compatibility in mind with the existing o11s. This allows a mix of nodes, both vanilla o11s and the ones based on this solution, to coexist and work without hitches.
 
 ARCHITECTURE DIAGRAM
 
 Experiment
-An experiment was carried out to emulate the working of this solution in a real network. It was set up using o11s as the base network. There are four machines involved. A Client C, two gateways G1 and G2, and a server S. The client C cannot directly reach the server S and must communicate via either G1 or G2. Files are stored on the server S and the client C wants to download these files. The link capacities on either sides of both GW1 and GW2 are kept identical and varied from 100 KBPS to 1400 KBPS. Downloads were performed for each value of link speed once with GW1, once with GW2 and ultimately with both GW1 and GW2 simultaneously. 
+An experiment was carried out to emulate the working of this solution in a real network. Set up using o11s as the base network, there are four machines involved. A Client C, two gateways G1 and G2, and a server S. The client C cannot directly reach the server S and must communicate via either G1 or G2. Files are stored on the server S and the client C wants to download these files. The link capacities on either sides of both GW1 and GW2 are kept identical and varied from 100 KBPS to 1400 KBPS. Downloads are performed for each value of the link speed once with GW1, once with GW2 and ultimately with both GW1 and GW2 simultaneously. 
 
-The graph below was created with experimental readings and it clearly shows  gain in the network when download times are considered. It is evident from the graph that the gains are linear until the underlying hardware becomes a bottleneck. Since high speed devices are not always utilized to the maximum extent, linear gains can be achieved in most of the real world scenarios.
+The graph below was created with experimental readings and it clearly shows gains in the network when download times are considered. It is evident from the graph that the gains are linear until the underlying hardware becomes a bottleneck. Since high speed devices are not always utilized to the maximum extent, linear gains can be achieved in most of the real world scenarios.
 
 Results
 Linear gains (bandwidth adds up) until the underlying hardware link becomes a bottleneck.
