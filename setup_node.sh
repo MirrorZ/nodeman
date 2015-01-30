@@ -15,7 +15,7 @@ MESH_IF=${2-mesh0}
 MESH_IP=${3-192.168.42.2}
 TAP_IP=${4-10.0.0.1}
 TAP_ETH=${5-1A-2B-3C-4D-5E-6F}
-TAP_NW="${TAP_IP%.*}.0/24"
+TAP_NW="${TAP_IP}/24"
 MESH_NW="${MESH_IP%.*}.0/24"
 
 iw dev $WLAN_IF interface add $MESH_IF type mp
