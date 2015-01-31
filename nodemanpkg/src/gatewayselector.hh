@@ -38,7 +38,7 @@ public:
     ~GatewaySelector();
 
     const char *class_name() const		{ return "GatewaySelector"; }
-    const char *port_count() const		{ return "2/2"; }
+    const char *port_count() const		{ return "3/2"; }
     const char *processing() const		{ return PUSH; }
 
     int configure(Vector<String> &, ErrorHandler *);
@@ -75,7 +75,7 @@ private:
     std::string interface_mac_address;
 		
     void process_pong(Packet *p);
- 
+    void process_antipong(Packet * p);
     Packet * select_gate(Packet *p);
     IPAddress cache_lookup(uint16_t);
     Packet * set_ip_address(Packet *, IPAddress);

@@ -23,11 +23,14 @@ brctl addbr $BR_IF
 brctl addif $BR_IF $OTHER_BR $MESH_IF
 ifconfig $OTHER_BR up
 
+sleep 5
 #echo "Waiting for IP Address assignment on bridge"
 dhclient $BR_IF
 
 #echo "Joining mesh <ID> openmesh"
 ifconfig $WLAN_IF down
 ifconfig $MESH_IF up
+
+sleep 2
 iw dev $MESH_IF mesh join openmesh
 echo "Done."

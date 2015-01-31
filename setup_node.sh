@@ -4,10 +4,10 @@
 
 #!/bin/bash
 
-# if [ $# -ne  ]; then
-# 	echo "Usage : ./setup_node [<WLAN_IF> <MESH_IF> <MESH_IP> <TAP_IP> <TAP_ETH>]"
-# 	exit 1
-# fi
+ if [ $# -lt 1 ]; then
+ 	echo "Usage : ./setup_node [<WLAN_IF> <MESH_IF> <MESH_IP> <TAP_IP> <TAP_ETH>]"
+ 	exit 1
+ fi
 
 #List of the variables required.
 WLAN_IF=${1-wlan0}
@@ -33,7 +33,7 @@ ip route flush table 0
 #Scrape data for the input mesh interface.
 echo -e "The details are : $MESH_IF -> $MESH_IP ($MESH_NW) -> $MESH_ETH_ADDR. $TAP_IP ($TAP_NW) -> $TAP_ETH."
 
-echo -e "Calling node_gatewayselector.click"
+echo -e "Calling node_gatewayselector.click. Don't forget to set the default route!"
 echo -e "click node_gatewayselector.click MESH_IFNAME=$MESH_IF MESH_IP_ADDR=$MESH_IP MESH_ETH=$MESH_ETH_ADDR MESH_NETWORK=$MESH_NW FAKE_IP=$TAP_IP FAKE_ETH=$TAP_ETH FAKE_NETWORK=$TAP_NW &"
 
 click node_gatewayselector.click\
@@ -43,10 +43,7 @@ click node_gatewayselector.click\
 			MESH_NETWORK=$MESH_NW\
 			FAKE_IP=$TAP_IP\
 			FAKE_ETH=$TAP_ETH\
-			FAKE_NETWORK=$TAP_NW &
+			FAKE_NETWORK=$TAP_NW
 
-ip route add default via $FAKE_IP
-
-echo -e "Done. Opening click script for you : "
-
-fg
+#ip route add default via $FAKE_IP
+#echo -e "Done. Opening click script for you : "
