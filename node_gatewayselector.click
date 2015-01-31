@@ -52,7 +52,7 @@ fake_arp_responder :: ARPResponder(0/0 01:01:01:01:01:01);
 self_arp_responder :: ARPResponder($MESH_IP_ADDR $MESH_ETH)
 
 fh_cl :: Classifier(12/0806 20/0001, 12/0800, -)
-fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, 12/0700, -)
+fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, 12/0700, 12/0701, -)
 
 fd :: FromDevice($MESH_IFNAME, SNIFFER false)
 rrs :: RoundRobinSched()
@@ -179,6 +179,8 @@ ipc[1] -> Discard;
 fd_cl[3] //-> Print(GoingIntoGateSelector[1])
 -> [1]gate_selector;
 
+fd_cl[4] -> Print("Got ANTIPONG", MAXLENGTH 200) -> [2]gate_selector;
+
 //Anything else from device
-fd_cl[4] // -> Print(GoingToKernelTapDirectly)
+fd_cl[5] // -> Print(GoingToKernelTapDirectly)
 	   -> kernel_tap
