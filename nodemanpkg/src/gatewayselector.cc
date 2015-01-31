@@ -63,7 +63,6 @@ int GatewaySelector::initialize(ErrorHandler *)
 void GatewaySelector::run_timer(Timer *timer)
 {
 		assert(timer == &_master_timer);
-		Timestamp now = Timestamp::now_steady();
 		
 		std::vector<GateInfo>::iterator it;
 		for(it = gates.begin(); it != gates.end(); ++it) {
@@ -268,7 +267,11 @@ void GatewaySelector::push(int port, Packet *p)
       //click_chatter("Calling case 0 : select_gate\n");      
       p = select_gate(p);
 
-      if((p->dst_ip_anno()).unparse() == "0.0.0.0")
+      if(p == NULL)
+	{
+	  click_chatter("Select gate returning NULL packet! This seems like a bug.");
+	}
+      else if((p->dst_ip_anno()).unparse() == "0.0.0.0")
 	{
 	  //click_chatter("IP Address is 0.0.0.0. Pushing on [1]");
 	  output(1).push(p);
@@ -313,7 +316,7 @@ Packet * GatewaySelector::select_gate(Packet *p)
       uint16_t src_port = 0;
       src_port += *ptr;
       ptr++;
-      src_port << 8;
+      src_port = src_port << 8;
       src_port += *ptr;
       //click_chatter("src port is : %" PRIu16 "\n",src_port);
       
@@ -331,7 +334,8 @@ Packet * GatewaySelector::select_gate(Packet *p)
       p = set_ip_address(p,ip);
       return p;
     }
-  
+  else
+    return NULL;
 }
 
 IPAddress GatewaySelector::cache_lookup(uint16_t src_port)
