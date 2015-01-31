@@ -1,9 +1,9 @@
 AddressInfo(
-	REAL_IP 192.168.42.195,
+	REAL_IP 192.168.42.89,
 	REAL_GATEWAY 192.168.42.129,
-	FAKE_GATEWAY 192.168.42.5,
+	FAKE_GATEWAY 192.168.42.8,
 //	REAL_MESH_MAC C0-4A-00-23-BA-BD,
-	REAL_GATEWAY_MAC 0a:75:b0:7a:d5:69,
+	REAL_GATEWAY_MAC c6:1c:41:a4:34:5a,
 //	S4_MAC  8e:e0:85:a4:67:02
 //	S2_MAC 0A-82-32-D6-2A-52	
 //	REAL_NETWORK 192.168.42.1/24,
@@ -39,8 +39,12 @@ rrs::RoundRobinSched()
 tun     -> MarkIPHeader(0)
         -> StoreIPAddress(REAL_IP, 12)          // store real address as source
 	-> FixChecksums                         // recalculate checksum
-        -> gs :: IPClassifier(dst net 192.168.42.1/24,- )
-	-> GetIPAddress(16)
+        -> gs :: IPClassifier(dst 192.168.42.129, dst net 192.168.42.1/24,- )
+	-> EtherEncap(0x0800, REAL_MESH_MAC, REAL_GATEWAY_MAC)
+	-> Queue
+	-> [4]rrs
+
+gs[1]	-> GetIPAddress(16)
 	-> Queue    // fix the IP checksum, and any embedded checksums that include data
     // from the IP header (TCP and UDP in particular)
 
@@ -48,7 +52,7 @@ tun     -> MarkIPHeader(0)
 
 tun[1]  -> Queue -> ARPResponder(0/0 01:01:01:01:01:01) -> [2]rrs
 
-gs[1]	-> SetIPAddress(REAL_GATEWAY)             // route via gateway
+gs[2]	-> SetIPAddress(REAL_GATEWAY)             // route via gateway
 	-> Queue
 	//-> Print(here)
 	-> [1]rrs1
