@@ -45,18 +45,11 @@ BR_ETH=$(cat /sys/class/net/$BR_IF/address)
 
 BR_NW="${BR_IP}/24"
 
-
 ip route flush table 0
 
-echo -e "click bridge.click\ 
-			BRIDGE_IF=$BR_IF\
-			BRIDGE_IP=$BR_IP\
-			BRIDGE_MAC=$BR_ETH\
-			BRIDGE_NETWORK=$BR_NW\
-                        GATEWAY_IP=$GW_IP\
-			FAKE_IP=$TAP_IP\			
-			FAKE_NETWORK=$TAP_NW
-"
+echo -e "Running click script now. Don't forget to add a default route!."
+
+echo -e "click bridge.click BRIDGE_IF=$BR_IF BRIDGE_IP=$BR_IP BRIDGE_MAC=$BR_ETH BRIDGE_NETWORK=$BR_NW GATEWAY_IP=$GW_IP FAKE_IP=$TAP_IP FAKE_NETWORK=$TAP_NW"
 
 click bridge.click BRIDGE_IF=$BR_IF\
 		   BRIDGE_IP=$BR_IP\
