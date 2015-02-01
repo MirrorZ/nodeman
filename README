@@ -2,12 +2,9 @@ Nodeman - Nodemanager for the WMN
 Go with the flow!
 (An SDN Approach using Click Modular Router)
 
-Nodeman is an SDN approach to effectively utilize the bandwidth of a Wireless Mesh Network using open80211s.Moving away from the conventional single association with a gateway, Nodeman running on each node knows all
-the mesh gates present in the network and effectively use all of them. It uses the fact that applications generally open multiple sockets for file download. The traffic is split on per flow basis and routed to a
-suitable gateway known to the mesh node. This approach makes it possible to utilize all the internet access gateways present in the network thereby resulting in increased network throughput.
+Nodeman is an SDN approach to utilize all the available bandwidth of a Wireless Mesh Network using open80211s. Moving away from the conventional single association with a gateway, Nodeman running on each node knows all the mesh gates present in the network and effectively uses all of them. It uses the fact that applications generally open multiple sockets for data transfer. The traffic is split on a per-flow basis and routed to a suitable gateway known to the mesh node. This approach makes it possible to utilize all the internet access gateways present in the network thereby resulting in increased network throughput.
 
- Nodeman makes use of click modular router for packet processing in userspace. It includes the experiments carried out in controlled environments to establish the proof of concept. Linear gains are visible unless
-the link capacity becomes a bottleneck.
+ Nodeman makes use of the Click modular router for packet processing in userspace. It includes the experiments carried out in controlled environments to establish the proof of concept. Linear gains are visible till the link capacity becomes a bottleneck.
 
 ************************************************************************
 
@@ -120,7 +117,14 @@ The default MESH ID for mesh network is openmesh. In case you want to change tha
 Network manager tries to put interfaces in managed mode, so it is of utmost importance that it be disabled/removed.
 An alternative to networkmanager is wicd (pronounced "wicked")
 
-In case of any issues/suggestions/feedback, please do write to us at scar.nodeman@gmail.com
+In case of any issues/suggestions/feedback, please do write to us at scar.nodeman@gmail.com or mail any of the AUTHORS.
 Don't hesitate to open tickets/add issues on the git repos as well.
 
-This is a work under heavy progress!
+This is a work under heavy progress! Your suggestions are welcome.
+
+AUTHORS
+Abhijit Gadgil <gabhijit@gmail.com>
+Ashish Gupta <ashmew2@gmail.com>
+Chandrika Parimoo <chandrika3437@gmail.com>
+Rutuja Shah <rutu.shah.26@gmail.com>
+Sudipto Chatterjee <sudip1401@gmail.com>
