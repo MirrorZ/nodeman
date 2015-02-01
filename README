@@ -67,7 +67,22 @@ $ iw dev meshY station dump
 This will give you a list of all the nodes on the mesh.
 ************************************************************************
 
-Description about click files : 
+FOR BUILDING CLICK
+
+$ git clone https://www.github.com/scar1337/click scar-click
+$ cd scar-click
+$ ./configure --enable-all-elements --disable-linuxmodule
+$ make
+$ make elemlist
+# make install
+
+This will install click with the required GatewaySelector element and let you use node click scripts.
+
+# -> Superuser priveleges (use sudo or su)
+$ -> Normal user.
+************************************************************************
+
+ABOUT CLICK FILES: 
 
 node_gatewayselector.click -> Runs on a node and handles all the activites of that node. Also listens for any upcoming broadcasts from the gates to update the gate table accordingly. It also decides which gate to route the outbound traffic to using our QoS processing , which just does it on an even - odd source port basis for now.
 
