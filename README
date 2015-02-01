@@ -2,6 +2,17 @@ Nodeman - Nodemanager for the WMN
 Go with the flow!
 (An SDN Approach using Click Modular Router)
 
+Nodeman is an SDN approach to effectively utilize the bandwidth of a Wireless Mesh Network using open80211s.
+Moving away from the conventional single association with a gateway, Nodeman running on each node knows all
+the mesh gates present in the network and effectively use all of them. It uses the fact that applications
+generally open multiple sockets for file download. The traffic is split on per flow basis and routed to a
+suitable gateway known to the mesh node. This approach makes it possible to utilize all the internet access
+gateways present in the network thereby resulting in increased network throughput.
+
+ Nodeman makes use of click modular router for packet processing in userspace. It includes the experiments 
+carried out in controlled environments to establish the proof of concept. Linear gains are visible unless
+the link capacity becomes a bottleneck.
+
 Grab the click modified copy : https://www.github.com/scar1337/click
 
 (You might wanna check out the notes section at the end of the document if you have never set up mesh before)
