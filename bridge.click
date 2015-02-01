@@ -22,7 +22,7 @@ elementclass FixChecksums {
 
 rrs1::RoundRobinSched()
 
-tun::KernelTun(FAKE_NETWORK)
+tun::KernelTun($FAKE_NETWORK)
 fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800)
 rrs::RoundRobinSched()
 
