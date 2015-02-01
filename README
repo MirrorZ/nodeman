@@ -1,23 +1,43 @@
 Nodeman - Nodemanager for the WMN
 Go with the flow!
+(An SDN Approach using Click Modular Router)
 
-Right now, from what can be observed, These are the scripts that are being used : 
+Grab the click modified copy : https://www.github.com/scar1337/click
 
-node.click -> Runs on a node and handles all the activites of that node. Also listens for any upcoming broadcasts from the gates to update the gate table 
-accordingly. It also decides which gate to route the outbound traffic to using our QoS processing , which just does it on an even - odd source port basis for 
-now.
+*************************************************************************
+To see this in action :
+*************************************************************************
+AUTOMATED APPROACH : 
+--------------------
 
-bridge.click - Runs on a gate which is bridged to an external gateway and routes the traffic to external worlds for the internal network. If any NAT is 
-required, this seems like a place to do it. 
+On a machine wanting to become a GATE / BRIDGE : 
 
-mac-ping.click - Modified now to change what it was originally intended to do. It broadcasts L2 packets and usually is meant to run on the gate. The gate's IP
-address is embedded in the packet. Any additional metrics that are required to be sent can be just appended to the end of the generated	packet. 
+1) Clear your IP route table :
+# ip route flush table 0
+
+2)Run setup_gate.sh with the required CL args : 
+
+./setup_gate wlanX meshY ethZ br0 GW_IP
+
+wlanX is the real interface with mesh support.
+meshY is the virtual mesh interface you want to create.
+ethZ/usbZ is the real interface you have internet access on.
+br0 is the name of the bridge you want to create.
+GW_IP is the IP address of the router which provides internet access (Example : 192.168.42.1)
+
+This sets up the required interfaces and starts up the click script appropriately.
+
+3) Add a default gateway via 10.0.0.1
+# ip route add default via 10.0.0.1
+
+This is so that the kernel on the gate knows where to send out requests/packets.
+---------------------------------Gate is now set up------------------------------------
 
 
-Other than this, some developer notes regarding the scripts : 
+Description about click files : 
 
-#) Regarding the fluid gates and dynamic addition : 
-	One element which serves as the container for gates and the MAC-IP Binding.
-	One element which when supplied the mac-ip-broadcasts using mac-ping.click builds up the table.
-	One element which reads the gateway table and selects a gate on the basis of QoS and source port.
+node_gatewayselector.click -> Runs on a node and handles all the activites of that node. Also listens for any upcoming broadcasts from the gates to update the gate table accordingly. It also decides which gate to route the outbound traffic to using our QoS processing , which just does it on an even - odd source port basis for now.
 
+bridge.click - Runs on a gate which is bridged to an external gateway and routes the traffic to external worlds for the internal network. If any NAT is required, this seems like a place to do it. 
+
+mac-ping.click - It broadcasts L2 packets and usually is meant to run on the gate. The gate's IP address is embedded in the packet. Any additional metrics that are required to be sent can be just appended to the end of the generated packet. 
