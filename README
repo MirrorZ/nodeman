@@ -4,20 +4,21 @@ Go with the flow!
 
 Grab the click modified copy : https://www.github.com/scar1337/click
 
+(You might wanna check out the notes section at the end of the document if you have never set up mesh before)
+
 *************************************************************************
 To see this in action :
 *************************************************************************
-AUTOMATED APPROACH : 
---------------------
-
-On a machine wanting to become a GATE / BRIDGE : 
+FOR SETTING UP A GATE : 
+-----------------------
+(# -> Requires super user privelege)
 
 1) Clear your IP route table :
 # ip route flush table 0
 
 2)Run setup_gate.sh with the required CL args : 
 
-./setup_gate wlanX meshY ethZ br0 GW_IP
+# ./setup_gate wlanX meshY ethZ br0 GW_IP
 
 wlanX is the real interface with mesh support.
 meshY is the virtual mesh interface you want to create.
@@ -31,8 +32,40 @@ This sets up the required interfaces and starts up the click script appropriatel
 # ip route add default via 10.0.0.1
 
 This is so that the kernel on the gate knows where to send out requests/packets.
----------------------------------Gate is now set up------------------------------------
+This sets up a gate which can service internet related requests for a node on the mesh network.
+You can check the working of the bridge by pinging an outside server such as open80211s.org
+************************************************************************************************
 
+FOR SETTING UP A NON-GATE NODE:
+------------------------------
+
+1) Clear your IP route table :
+# ip route flush table 0
+
+2)Run setup_node.sh with the required CL args : 
+
+# ./setup_node wlanX meshY mesh_ipv4
+
+wlanX is the real interface with mesh support.
+meshY is the virtual mesh interface you want to create.
+mesh_ipv4 is the IPv4 IP address desired for meshY interface.
+
+Please note, more arguments can be supplied but are not usually required.
+Please check setup_node.sh file for more details and changing variable values.
+
+This sets up the required interfaces and starts up the node click script.
+
+3) Add a default gateway via 10.0.0.1
+# ip route add default via 10.0.0.1
+
+Now the node is set up.
+If a gate is also present on the network, then you can ping outside servers.
+
+You can check if your mesh interface is properly up by issuing : 
+$ iw dev meshY station dump
+
+This will give you a list of all the nodes on the mesh.
+************************************************************************
 
 Description about click files : 
 
@@ -41,3 +74,16 @@ node_gatewayselector.click -> Runs on a node and handles all the activites of th
 bridge.click - Runs on a gate which is bridged to an external gateway and routes the traffic to external worlds for the internal network. If any NAT is required, this seems like a place to do it. 
 
 mac-ping.click - It broadcasts L2 packets and usually is meant to run on the gate. The gate's IP address is embedded in the packet. Any additional metrics that are required to be sent can be just appended to the end of the generated packet. 
+
+NOTES:
+-----
+
+The default MESH ID for mesh network is openmesh. In case you want to change that , make changes to setup_{node,gate}.sh files.
+
+Network manager tries to put interfaces in managed mode, so it is of utmost importance that it be disabled/removed.
+An alternative to networkmanager is wicd (pronounced "wicked")
+
+In case of any issues/suggestions/feedback, please do write to us at scar.nodeman@gmail.com
+Don't hesitate to open tickets/add issues on the git repos as well.
+
+This is a work under heavy progress!
