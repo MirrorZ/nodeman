@@ -70,7 +70,7 @@ fd_cl[2] -> CheckIPHeader(14)
 	// Packets destined for the host
         -> ipc :: IPClassifier(dst $BRIDGE_IP)
         // replace the real destination address with the fake address
-        -> StoreIPAddress(FAKE_IP, 30)
+        -> StoreIPAddress($FAKE_IP, 30)
         -> FixChecksums
         -> Strip(14)
         -> tun
