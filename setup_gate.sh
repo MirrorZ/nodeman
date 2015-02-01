@@ -11,7 +11,7 @@ OTHER_BR=$3
 BR_IF=$4
 GW_IP=$5
 TAP_IP=10.0.0.1
-TAP_NW="${TAP_IP}/24"
+TAP_NW="${TAP_IP}/8"
 
 echo "Setting up the gate."
 iw dev $WLAN_IF interface add $MESH_IF type mp
@@ -56,5 +56,5 @@ click bridge.click BRIDGE_IF=$BR_IF\
 		   BRIDGE_MAC=$BR_ETH\
 		   BRIDGE_NETWORK=$BR_NW\
                    GATEWAY_IP=$GW_IP\
-		   FAKE_IP=$TAP_IP\			
+		   FAKE_IP=$TAP_IP\
                    FAKE_NETWORK=$TAP_NW

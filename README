@@ -14,8 +14,22 @@ carried out in controlled environments to establish the proof of concept. Linear
 the link capacity becomes a bottleneck.
 
 Grab the click modified copy : https://www.github.com/scar1337/click
-
 (You might wanna check out the notes section at the end of the document if you have never set up mesh before)
+
+************************************************************************
+FOR BUILDING CLICK
+
+$ git clone https://www.github.com/scar1337/click scar-click
+$ cd scar-click
+$ ./configure --enable-all-elements --disable-linuxmodule
+$ make
+$ make elemlist
+# make install
+
+This will install click with the required GatewaySelector element and let you use node click scripts.
+
+# -> Superuser priveleges (use sudo or su)
+$ -> Normal user.
 
 *************************************************************************
 To see this in action :
@@ -45,6 +59,20 @@ This sets up the required interfaces and starts up the click script appropriatel
 This is so that the kernel on the gate knows where to send out requests/packets.
 This sets up a gate which can service internet related requests for a node on the mesh network.
 You can check the working of the bridge by pinging an outside server such as open80211s.org
+
+**********************FOR GATE BROADCASTING********************************
+
+Once the gate is set up, you will also want to broadcast it's presence using the included mac-ping.sh
+This calls mac-ping.click and broadcasts the IP address mentioned in hex in the last 4 bytes.
+
+You need to modify this line : 
+
+ff:ff:ff:ff:ff:ff e0:2a:82:43:5b:e2 07 00 c0 a8 2a 05
+
+And modify the last 4 bytes to reflect the IP address (in HEX) of the router on your network.
+c0 -> 192, a8 -> 168, 2a -> 42, 05 -> 5
+
+This will enable the nodes on the network to add this gate to their list of gates and use it.
 ************************************************************************************************
 
 FOR SETTING UP A NON-GATE NODE:
@@ -78,7 +106,7 @@ $ iw dev meshY station dump
 This will give you a list of all the nodes on the mesh.
 ************************************************************************
 
-Description about click files : 
+ABOUT CLICK FILES: 
 
 node_gatewayselector.click -> Runs on a node and handles all the activites of that node. Also listens for any upcoming broadcasts from the gates to update the gate table accordingly. It also decides which gate to route the outbound traffic to using our QoS processing , which just does it on an even - odd source port basis for now.
 
