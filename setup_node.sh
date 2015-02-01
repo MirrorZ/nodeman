@@ -6,6 +6,8 @@
 
  if [ $# -lt 1 ]; then
  	echo "Usage : ./setup_node [<WLAN_IF> <MESH_IF> <MESH_IP> <TAP_IP> <TAP_ETH>]"
+	echo "Usually, you only need the first three arguments."
+	echo "Example : # ./setup_node wlan1 mesh0 192.168.42.55"
  	exit 1
  fi
 
