@@ -1,20 +1,23 @@
-/** For mesh node (Do not make changes) **/
+/*
+ *			              IP: 192.168.42.148
+ *			             MAC: e8:de:27:09:06:20  
+ *					|        |
+ *			          ------| Gate 1 |-----------
+ *			         |      |        |          |        |         |
+ *		|	 |-------                           ---------|  Server |
+ *		| Client |-------                           ---------|         |
+ *		|	 |       |                          |
+ *	   IP: 192.168.42.100	 -------|        |-----------    IP: 192.168.42.5
+ *	  MAC: c4:6e:1f:11:c1:e9	| Gate 2 |              MAC: e8:94:f6:26:25:a5
+ *					|        |
+ *			           IP: 192.168.42.149
+ *			          MAC: c0:4a:00:23:ba:bd 
+ *
+ *
+ *
+ *
+ */
 
-/* Make changes to this AddressInfo element and use it.
-   Change REAL_* fields, the FAKE_* doesn't need to be changed usually
-
-   CTRL+F and replace all occurences of eth0(or wlan0) with your own device
-
-   Clear your routing table of all entries, then run this script.
-
-   # ip route flush table 0
-
-   While this script is running, add a route through the fake device using :
-   	# ip route add default via FAKE_IP
-	like
-	# ip route add default via 10.0.0.1
-
-*/
 
 AddressInfo(
 	REAL_IP 192.168.42.5,
@@ -22,119 +25,115 @@ AddressInfo(
 	GW2_IP 192.168.42.149,
 
 	REAL_NETWORK 192.168.42.1/24,
-//	REAL_MAC AC-72-89-25-05-30,
-//	REAL_MAC 00-18-F3-81-1A-B5,
 	REAL_MAC E8-94-F6-26-25-A5,
-//	REAL_MAC 02-61-67-30-68-59,
-//	REAL_MAC C0-4A-00-23-BA-BD,
-//	REAL_MAC E8-DE-27-09-06-20,
-//	REAL_MAC C4-6E-1F-11-C1-E9,
 	FAKE_IP 10.0.0.1,
 	FAKE_MAC 1A-2B-3C-4D-5E-6F,
 	FAKE_NETWORK 10.0.0.1/8)
 
-// Takes traffic from kernel through Kernel tap and sends it to eth0
-tun :: KernelTap(FAKE_NETWORK, ETHER FAKE_MAC)
+/*  
+ * tap    - Traffic from kernel tap
+ * aq     - Send out ARP broadcast for an IP address with src IP and MAC of the host	
+ * ar     - Responds to ARP requests from the kernel with a fake MAC	
+ * fh_cl  - Classify traffic from the host as ARP and IP	
+ * fd_cl  - Classify traffic from device as ARP response and IP	
+ * fd     - Specify the interface on which traffic is to be captured
+ */
 
-//Add host's IP address
+tap 	:: KernelTap(FAKE_NETWORK, ETHER FAKE_MAC)
+aq 	:: ARPQuerier(REAL_IP, REAL_MAC);
+ar 	:: ARPResponder(0/0 1:1:1:1:1:1);
+fh_cl 	:: Classifier(12/0806, 12/0800)
+fd_cl 	:: Classifier(12/0806 20/0002, 12/0800, -)
+fd 	:: FromDevice(mesh0, SNIFFER false)
+rrs 	:: RoundRobinSched()
+rrs1	:: RoundRobinSched()
+    
 
-aq :: ARPQuerier(REAL_IP, mesh0);
-ar :: ARPResponder(0/0 1:1:1:1:1:1);
-fh_cl :: Classifier(12/0806, 12/0800)
-fd_cl :: Classifier(12/0806 20/0002, 12/0800, -)
-fd :: FromDevice(mesh0, SNIFFER false)
-rrs :: RoundRobinSched()
-//rrs2 :: RoundRobinSched()
+/* fix the IP checksum, and any embedded checksums that include data
+ * from the IP header (TCP and UDP in particular)
+ */
 
 elementclass FixChecksums {
-    // fix the IP checksum, and any embedded checksums that include data
-    // from the IP header (TCP and UDP in particular)
-    input -> SetIPChecksum
-        -> ipc :: IPClassifier(tcp, udp, -)
-        -> SetTCPChecksum
-        -> output;
-    ipc[1] -> SetUDPChecksum -> output;
-    ipc[2] -> output
+    	input 	-> SetIPChecksum
+        	-> ipc  :: IPClassifier(tcp, udp, -)
+        	-> SetTCPChecksum
+        	-> output;
+    
+	ipc[1] 	-> SetUDPChecksum -> output;
+
+   	ipc[2] 	-> output
 }
 
-tun -> fh_cl; //Print(ComingFromTun) -> fh_cl;
+/* All the traffic from the host is classified 
+ */
+tap -> fh_cl; 
 
-//((wlan.sa[0:3] == e8:de:27) || (wlan.sa[0:3] == c0:4a:00))&& !(wlan.da == ff:ff:ff:ff:ff:ff)
-//((wlan.sa[0:3] == e8:de:27) || (wlan.sa[0:3] == c0:4a:00) || (wlan.sa[0:3] == 94:db:c9)) && !(wlan.da == ff:ff:ff:ff:ff:ff)
+/* ARP requests from host are supplied with fake ARP responses 
+ */
+fh_cl[0]   -> ar
+	   -> tap;
 
-//ARP request from Host
-fh_cl[0] -> ar -> tun;
 
-rrs1::RoundRobinSched()
 
-//IP from Host
-fh_cl[1] //-> IPPrint(HostIP) 
- 	 -> Strip(14)                           // remove crap Ether header
+/* IP packets received from host are classified with respect to the 
+ * dst IP. Packets destined for the client are routed via Gate1 or Gate2
+ * depending upon it's destination port, even dst port packets via Gate2 
+ * and odd via Gate1
+ */
+
+fh_cl[1] -> Strip(14)                                        // Remove Fake Ether header appended by the host
          -> MarkIPHeader(0)
-         -> StoreIPAddress(REAL_IP, 12)		// store real address as source (Host's IP address)
-         -> FixChecksums                        // recalculate checksum
+         -> StoreIPAddress(REAL_IP, 12)		             // Store real address as source (Host's IP address)
+         -> FixChecksums                                     // Recalculate checksum
 	 -> gs :: IPClassifier(dst 192.168.42.100, dst net REAL_NETWORK, -) 
 
-gs[2] -> Discard;
+gs[2] 	-> Discard;
 
-gs[1]    -> GetIPAddress(16)
-	 //-> IPPrint()
-	 -> Queue
-	 -> [0]rrs1	
+gs[1]   -> GetIPAddress(16)                                  // IP Traffic having dst net as REAL_NETWORK (local network)
+	-> Queue
+	-> [0]rrs1	
 
-gs[0]	 -> portclassifier :: IPClassifier(dst port & 1 == 0, -)
-	 -> Print(Routing1, MAXLENGTH 200)
-	 -> SetIPAddress(GW2_IP)          // route via gateway (Router's address)
-	 -> Queue
-	 -> [1]rrs1
+gs[0]	-> portclassifier :: IPClassifier(dst port & 1 == 0, -) 
+	-> Print(Routing1, MAXLENGTH 200)
+	-> SetIPAddress(GW2_IP)                             // Route via Gate2 by setting it's annotation
+	-> Queue
+	-> [1]rrs1
 
 portclassifier[1] -> Print(Routing149, MAXLENGTH 200)
-		  -> SetIPAddress(GW1_IP)
+		  -> SetIPAddress(GW1_IP)                   // Route via Gate1 by setting it's annotation
 		  -> Queue
 		  -> [2]rrs1
 
-rrs1 -> pt::PullTee -> Discard
+rrs1    -> pt::PullTee
+	-> Discard
 
-pt[1]	 -> [0]aq
-//	 -> Print(AfterARPQ, MAXLENGTH 200)
-//	 -> IPPrint() 
-	 -> Queue -> [0]rrs;
-
-
-rrs -> ToDevice(mesh0);
-//rrs2 -> pt :: PullTee[1] ->[0]aq -> Queue -> [0]rrs;
-
-//pt[0] -> Discard;
-
-//From Device to CLassifier
-fd -> Print(GotFromDevice) -> fd_cl;
-
-// ARP req from device
-// ARPResponder to resolve requests for host's IP
-// Replace it with host's IP address and MAC address  
-//fd_cl[0] -> ARPResponder(REAL_IP REAL_MAC) -> Queue -> [1]rrs
+pt[1]	-> [0]aq
+	-> Queue
+        -> [0]rrs;
 
 
-//ARP response from device
-fd_cl[0] -> t :: Tee;
-t[0] -> [1]aq;
-t[1] -> tun;
+rrs     -> ToDevice(mesh0);
 
-//IP from device 
+fd      -> fd_cl;                                            //From Device to CLassifier
+
+fd_cl[0] -> t :: Tee;					     //ARP response from device
+t[0]     -> [1]aq;
+t[1]     -> tap;
+
+/*
+ * IP packets for the host are send to the kernel for processing
+ * while those meant for some other node and discarded
+ */
 fd_cl[1] -> CheckIPHeader(14)
-        // check for responses from the test network
-//        -> ipc :: IPClassifier(src net 192.168.42.1/24, -)
-	->ipc :: IPClassifier(dst REAL_IP, -)
-         // replace the real destination address with the fake address
-        -> StoreIPAddress(FAKE_IP, 30)
-        -> FixChecksums
-//	-> Print(fd_cl2, MAXLENGTH 200)
-	-> Strip(14)
-	-> EtherEncap(0x0800, REAL_MAC, FAKE_MAC)
-        -> tun
+	 -> ipc :: IPClassifier(dst REAL_IP, -)
+         -> StoreIPAddress(FAKE_IP, 30)
+         -> FixChecksums
+	 -> Strip(14)
+	 -> EtherEncap(0x0800, REAL_MAC, FAKE_MAC)
+         -> tap
 
-//Forward IP packet not meant for the host
 
-ipc[1] -> Discard   ;
-//Anything else from device
-fd_cl[2] -> tun
+
+ipc[1]   -> Discard                                          //Discard IP packet not meant for the host
+
+fd_cl[2] -> tap                                              //Any other traffic from device is sent to kernel for processing
