@@ -1,0 +1,10 @@
+Various machines IP and MAC. Keep them fixed for painless use.
+
+149 is BD
+148 is 6:20
+100 is the relay as well as e9
+5 is the server
+AP machine runs create_ap and bridges wlanX (which was used to create mesh) and meshY
+
+ip route set on relay.
+Keep wireshark closed.
