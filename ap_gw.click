@@ -56,7 +56,8 @@ elementclass FixChecksums {
 			/**************************** KERNEL ************************************/
 
 //Traffic coming from Kernel
-kernel_tap -> fh_cl;
+kernel_tap -> Print(ComingFromK) 
+	   -> fh_cl;
 
 //ARP request from Host
 fh_cl[0]  -> fake_arp_responder
@@ -64,6 +65,7 @@ fh_cl[0]  -> fake_arp_responder
 //IP from Host
 fh_cl[1] -> Strip(14)						// remove crap Ether header
          -> MarkIPHeader(0)
+	 -> IPPrint(IPFromK)
          -> StoreIPAddress($MESH_IP_ADDR, src)			// store real address as source (Host's IP address)
          -> FixChecksums                        		// recalculate checksum
 	 -> gs :: IPClassifier(dst net $MESH_NETWORK, -)  	// classify local network and external network traffic
@@ -74,7 +76,8 @@ fh_cl[2] -> Discard;
 
 //Sets the gateway to serve the request
 gs[1] -> [0]gate_selector[0]
-      -> Queue -> [1]rrs1
+      -> Queue 
+      -> [1]rrs1
 
 gate_selector[1]-> Discard;					// when no gates are present in the network, all the packets are discarded
 
@@ -103,6 +106,7 @@ FromDevice(ap0 ,SNIFFER false) -> apcl::Classifier(12/0800, 12/0806 20/0002)
 		//	       -> IPPrint(BeforeNAT)		
 			       -> rw
 		//	       -> IPPrint(AfterNAT)
+			       -> Queue		
 			       -> [2]rrs1
 
 apcl[1] -> [1]apaq			
@@ -133,7 +137,7 @@ fd_cl[2]  -> CheckIPHeader(14)
           -> kernel_tap						// send the traffic meant for the host to the kernel for processing
 
 // IP packets for AP
-ipc[1] -> -> Strip(14)
+ipc[1]    -> Strip(14)
 	  -> MarkIPHeader(0)
 	  -> [1]rw[1]
 	  -> IPPrint(Received)
