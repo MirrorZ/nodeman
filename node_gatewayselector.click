@@ -119,7 +119,7 @@ gs[1] //-> Print("ToGateSelector")
       //-> Print("AfterGateSelector")
       -> Queue -> [1]rrs1
 gate_selector[1]
-	//-> Print(DiscardedGateSelector)
+//	-> Print(DiscardedGateSelector)
 	-> Discard;
 
 rrs1 -> pt::PullTee -> Discard
@@ -140,13 +140,14 @@ rrs -> ToDevice($MESH_IFNAME);
 //pt[0] -> Discard;
 
 //From Device to CLassifier
-fd -> Print(FromDevice) -> fd_cl;
+fd -> fd_cl; //Print(FromDevice) 
+   -> fd_cl;
 
 // ARP req from device
 // ARPResponder to resolve requests for host's IP
 // Replace it with host's IP address and MAC address  
-fd_cl[0] -> self_arp_responder -> Print(ARPRequestForSelf) -> Queue -> [1]rrs
-self_arp_responder[1] -> Print(ARPRequestNotForSelf) -> Discard;
+fd_cl[0] -> self_arp_responder ->  Queue -> [1]rrs
+self_arp_responder[1] ->  Discard;
 
 //ARP response from device
 fd_cl[1] ->  [1]real_arp_handler;
@@ -159,7 +160,7 @@ CONFIRMED and FIXED. REMOVE THIS.
 */
 
 //IP from device 
-fd_cl[2] -> Print(IPFromDevice, MAXLENGTH 200) 
+fd_cl[2] //-> Print(IPFromDevice, MAXLENGTH 200) 
 	 -> CheckIPHeader(14)
          // check for responses from the test network
 	 //        -> ipc :: IPClassifier(src net 192.168.42.1/24, -)
@@ -179,7 +180,7 @@ ipc[1] -> Discard;
 fd_cl[3] //-> Print(GoingIntoGateSelector[1])
 -> [1]gate_selector;
 
-fd_cl[4] -> Print("Got ANTIPONG", MAXLENGTH 200) -> [2]gate_selector;
+fd_cl[4] -> [2]gate_selector;
 
 //Anything else from device
 fd_cl[5] // -> Print(GoingToKernelTapDirectly)
