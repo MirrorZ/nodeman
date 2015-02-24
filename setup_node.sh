@@ -37,7 +37,7 @@ ip route flush table 0
 #Scrape data for the input mesh interface.
 echo -e "The details are : $MESH_IF -> $MESH_IP ($MESH_NW) -> $MESH_ETH_ADDR. $TAP_IP ($TAP_NW) -> $TAP_ETH."
 
-echo -e "Calling node_gatewayselector.click. Don't forget to set the default route!"
+echo -e "Running node_gatewayselector.click. Don't forget to set the default route!"
 
 echo -e "click node_gatewayselector.click MESH_IFNAME=$MESH_IF MESH_IP_ADDR=$MESH_IP MESH_ETH=$MESH_ETH_ADDR MESH_NETWORK=$MESH_NW FAKE_IP=$TAP_IP FAKE_ETH=$TAP_ETH FAKE_NETWORK=$TAP_NW"
 
