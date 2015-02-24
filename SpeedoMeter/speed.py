@@ -3,10 +3,9 @@ import subprocess
 import sys
 import time
 
-lock = threading.Lock()
 iii = 0
-
-y=""
+click_run = 0
+ylist=[]
 
 class FuncThread(threading.Thread):
     def __init__(self, target, *args):
@@ -17,27 +16,27 @@ class FuncThread(threading.Thread):
     def run(self):
         self._target(*self._args)
  
-def anotherFunc():
-    process = subprocess.Popen(["click node_gatewayselector.click MESH_IFNAME=mesh0 MESH_IP_ADDR=192.168.42.148 MESH_ETH=e8:de:27:09:06:20 MESH_NETWORK=192.168.42.0/24 FAKE_IP=10.0.0.1 FAKE_ETH=1A-2B-3C-4D-5E-6F FAKE_NETWORK=10.0.0.1/24"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    global y
-    global iii
-    # Poll process for new output until finished
+# def anotherFunc():
+#     process = subprocess.Popen(["click node_gatewayselector.click MESH_IFNAME=mesh0 MESH_IP_ADDR=192.168.42.148 MESH_ETH= MESH_NETWORK=192.168.42.0/24 FAKE_IP=10.0.0.1 FAKE_ETH=1A-2B-3C-4D-5E-6F FAKE_NETWORK=10.0.0.1/24"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+#     global y
+#     global iii
+#     # Poll process for new output until finished
 
-    while True:
-        nextline = process.stdout.readline()
-        if nextline == '' and process.poll() != None:
-            break
+#     while True:
+#         nextline = process.stdout.readline()
+#         if nextline == '' and process.poll() != None:
+#             break
         
-        sys.stdout.write(nextline)
-        sys.stdout.flush()
+#         sys.stdout.write(nextline)
+#         sys.stdout.flush()
         
-        iii+=1
-        if not iii%100000:
-            iii+=1
-            lock.acquire()                
-            print "Adding to y"
-            y+="192.168.42.6,ba:43:22:33:ba:bd,200\n"
-            lock.release()
+#         iii+=1
+#         if not iii%100000:
+#             iii+=1
+#             lock.acquire()                
+#             print "Adding to y"
+#             y+="192.168.42.6,ba:43:22:33:ba:bd,200\n"
+#             lock.release()
 
 #    output = process.communicate()[0]
 #    exitCode = process.returncode
@@ -240,7 +239,7 @@ class SpeedMeterDemo(wx.Frame):
         panel.SetSizerAndFit(sizer)
         sizer.Layout()
 
-        self.timer.Start(2000)        
+        self.timer.Start(1000)        
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
     def ExitWindow(self, event):
@@ -263,14 +262,33 @@ class SpeedMeterDemo(wx.Frame):
         # x = open("nodelog.log", 'r')
         # y = x.read()        
         # x.close()
-        global y
 
-        lock.acquire();
-
-        ylist = y.split('\n')[:-1]
+        global click_run
+        global ylist
+        # process = ""
         
-        total_speed = 0
-        print "Len(ylist) = " + str(len(ylist))
+        # if click_run == 0:
+        #     click_run = 1
+        #     process = subprocess.Popen(["click node_gatewayselector.click MESH_IFNAME=mesh0 MESH_IP_ADDR=192.168.42.100 MESH_ETH=c4:6e:1f:11:c1:e9 MESH_NETWORK=192.168.42.0/24 FAKE_IP=10.0.0.1 FAKE_ETH=1A-2B-3C-4D-5E-6F FAKE_NETWORK=10.0.0.1/24"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        # while True:
+        #     nextline = process.stdout.readline()
+        #     if nextline == '' and process.poll() != None:
+        #         break
+        
+        #     sys.stdout.write(nextline+"PYTHONED!")
+        #     sys.stdout.flush()
+
+        #     if nextline[0]=='-':
+        #         ylist.remove(nextline[1:])
+        #     elif nextline not in ylist:
+        #         ylist.append(nextline)
+                
+        #     #Need to add 
+
+        # #ylist = y.split('\n')[:-1]
+        
+        total_speed = 1000
 
         self.list_ctrl.DeleteAllItems()
         self.list_ctrl.InsertStringItem(0, 'Gate IP');
@@ -285,13 +303,13 @@ class SpeedMeterDemo(wx.Frame):
             self.list_ctrl.SetStringItem(i+1, 0, x[0]);
             self.list_ctrl.SetStringItem(i+1, 1, x[1]);
             self.list_ctrl.SetStringItem(i+1, 2, x[2]);
+
+            #110314 via 149
             total_speed += int(x[2])
             i+=1
             
         self.SpeedWindow1.SetSpeedValue(total_speed)
         self.txt1337.SetLabel(str(total_speed) + " KB/s")
-
-        lock.release()
 
 #        self.txt1337.SetLabel("9999" + " KB/s")
 #        self.list_ctrl.InsertStringItem(0, "Xyzzy");
@@ -354,10 +372,4 @@ def startup():
 
 
 #t1 = FuncThread(someOtherFunc, [1,2], 6)
-t1 = FuncThread(startup);
-t2 = FuncThread(anotherFunc);
-
-t1.start()
-t2.start()
-t1.join()
-t2.join()
+startup();
