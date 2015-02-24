@@ -448,48 +448,7 @@ cleanup() {
     done
     rm -rf $CONFDIR
 
-    if [[ "$SHARE_METHOD" != "none" ]]; then
-        if [[ "$SHARE_METHOD" == "nat" ]]; then
-            iptables -t nat -D POSTROUTING -o ${INTERNET_IFACE} -j MASQUERADE > /dev/null 2>&1
-            iptables -D FORWARD -i ${WIFI_IFACE} -s ${GATEWAY%.*}.0/24 -j ACCEPT > /dev/null 2>&1
-            iptables -D FORWARD -i ${INTERNET_IFACE} -d ${GATEWAY%.*}.0/24 -j ACCEPT > /dev/null 2>&1
-            [[ -n $OLD_IP_FORWARD ]] && echo $OLD_IP_FORWARD > /proc/sys/net/ipv4/ip_forward
-        elif [[ "$SHARE_METHOD" == "bridge" ]]; then
-            if [[ -n $OLD_BRIDGE_IPTABLES ]]; then
-                echo $OLD_BRIDGE_IPTABLES > /proc/sys/net/bridge/bridge-nf-call-iptables
-            fi
 
-            if ! is_bridge_interface $INTERNET_IFACE; then
-                ip link set down $BRIDGE_IFACE
-                brctl delbr $BRIDGE_IFACE
-                ip addr flush $INTERNET_IFACE
-                ip link set dev $INTERNET_IFACE up
-
-                for x in "${IP_ADDRS[@]}"; do
-                    x="${x/inet/}"
-                    x="${x/secondary/}"
-                    x="${x/dynamic/}"
-                    x=$(echo $x | sed 's/\([0-9]\)sec/\1/g')
-                    x="${x/${INTERNET_IFACE}/}"
-                    ip addr add $x dev $INTERNET_IFACE
-                done
-
-                ip route flush dev $INTERNET_IFACE
-
-                for x in "${ROUTE_ADDRS[@]}"; do
-                    [[ "$x" == default* ]] && continue
-                    ip route add $x dev $INTERNET_IFACE
-                done
-
-                for x in "${ROUTE_ADDRS[@]}"; do
-                    [[ "$x" != default* ]] && continue
-                    ip route add $x dev $INTERNET_IFACE
-                done
-
-                networkmanager_rm_unmanaged_if_needed $INTERNET_IFACE
-            fi
-        fi
-    fi
 
     if [[ "$SHARE_METHOD" != "bridge" ]]; then
         iptables -D INPUT -p tcp -m tcp --dport 53 -j ACCEPT > /dev/null 2>&1
@@ -1001,80 +960,6 @@ if [[ "$SHARE_METHOD" != "bridge" ]]; then
     ip addr add ${GATEWAY}/24 broadcast ${GATEWAY%.*}.255 dev ${WIFI_IFACE} || die "$VIRTDIEMSG"
 fi
 
-# enable Internet sharing
-if [[ "$SHARE_METHOD" != "none" ]]; then
-    echo "Sharing Internet using method: $SHARE_METHOD"
-    if [[ "$SHARE_METHOD" == "nat" ]]; then
-        iptables -t nat -I POSTROUTING -o ${INTERNET_IFACE} -j MASQUERADE || die
-        iptables -I FORWARD -i ${WIFI_IFACE} -s ${GATEWAY%.*}.0/24 -j ACCEPT || die
-        iptables -I FORWARD -i ${INTERNET_IFACE} -d ${GATEWAY%.*}.0/24 -j ACCEPT || die
-        echo 1 > /proc/sys/net/ipv4/ip_forward || die
-    elif [[ "$SHARE_METHOD" == "bridge" ]]; then
-        # disable iptables rules for bridged interfaces
-        echo 0 > /proc/sys/net/bridge/bridge-nf-call-iptables || die
-
-        # to initialize the bridge interface correctly we need to do the following:
-        #
-        # 1) save the IPs and route table of INTERNET_IFACE
-        # 2) if NetworkManager is running set INTERNET_IFACE as unmanaged
-        # 3) create BRIDGE_IFACE and add INTERNET_IFACE to it
-        # 4) set the previously saved IPs and route table to BRIDGE_IFACE
-        #
-        # we need the above because BRIDGE_IFACE is the master interface from now on
-        # and it must know where is connected, otherwise connection is lost.
-        if ! is_bridge_interface $INTERNET_IFACE; then
-            echo -n "Create a bridge interface... "
-            OLD_IFS="$IFS"
-            IFS=$'\n'
-
-            IP_ADDRS=( $(ip addr show $INTERNET_IFACE | grep -A 1 -E 'inet[[:blank:]]' | paste - -) )
-            ROUTE_ADDRS=( $(ip route show dev $INTERNET_IFACE) )
-
-            IFS="$OLD_IFS"
-
-            if networkmanager_is_running; then
-                networkmanager_add_unmanaged $INTERNET_IFACE
-                networkmanager_wait_until_unmanaged $INTERNET_IFACE
-            fi
-
-            brctl addbr $BRIDGE_IFACE || die
-            brctl setfd $BRIDGE_IFACE 0
-            brctl addif $BRIDGE_IFACE $INTERNET_IFACE || die
-            ip link set dev $BRIDGE_IFACE up || die
-            ip link set dev $INTERNET_IFACE up || die
-
-            ip addr flush $INTERNET_IFACE
-            for x in "${IP_ADDRS[@]}"; do
-                x="${x/inet/}"
-                x="${x/secondary/}"
-                x="${x/dynamic/}"
-                x=$(echo $x | sed 's/\([0-9]\)sec/\1/g')
-                x="${x/${INTERNET_IFACE}/}"
-                ip addr add $x dev $BRIDGE_IFACE || die
-            done
-
-            # remove any existing entries that were added from 'ip addr add'
-            ip route flush dev $INTERNET_IFACE
-            ip route flush dev $BRIDGE_IFACE
-
-            # we must first add the entries that specify the subnets and then the
-            # gateway entry, otherwise 'ip addr add' will return an error
-            for x in "${ROUTE_ADDRS[@]}"; do
-                [[ "$x" == default* ]] && continue
-                ip route add $x dev $BRIDGE_IFACE || die
-            done
-
-            for x in "${ROUTE_ADDRS[@]}"; do
-                [[ "$x" != default* ]] && continue
-                ip route add $x dev $BRIDGE_IFACE || die
-            done
-
-            echo "$BRIDGE_IFACE created."
-        fi
-    fi
-else
-    echo "No Internet sharing"
-fi
 
 # boost low-entropy
 if [[ $(cat /proc/sys/kernel/random/entropy_avail) -lt 1000 ]]; then
