@@ -17,20 +17,24 @@ echo "Setting up the gate."
 iw dev $WLAN_IF interface add $MESH_IF type mp
 
 ifconfig $WLAN_IF down
-#echo "Putting down $3 and $2"
+echo "Putting down $3 and $2"
 ifconfig $MESH_IF down
 ifconfig $OTHER_BR down
 
-#echo "Creating bridge"
+echo "Creating bridge"
 brctl addbr $BR_IF
 brctl addif $BR_IF $OTHER_BR $MESH_IF
 ifconfig $OTHER_BR up
 
 sleep 5
-#echo "Waiting for IP Address assignment on bridge"
+echo "Waiting for IP Address assignment on bridge"
 dhclient $BR_IF
 
-#echo "Joining mesh <ID> openmesh"
+echo "Waiting 60 seconds. Set up mac-ping by running mac_addr now."
+sleep 60
+
+
+echo "Joining mesh with mesh id: openmesh"
 ifconfig $WLAN_IF down
 ifconfig $MESH_IF up
 
