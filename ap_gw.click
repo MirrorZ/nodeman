@@ -39,6 +39,8 @@ fd_cl :: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, 12/0700, 12/0701,
 fd :: FromDevice($MESH_IFNAME, SNIFFER false)
 rrs :: RoundRobinSched()
 rrs1::RoundRobinSched()
+rrs2 :: RoundRobinSched()
+
 gate_selector :: GatewaySelector()
 
 elementclass FixChecksums {
@@ -56,7 +58,7 @@ elementclass FixChecksums {
 			/**************************** KERNEL ************************************/
 
 //Traffic coming from Kernel
-kernel_tap -> Print(ComingFromK) 
+kernel_tap //-> Print(ComingFromK) 
 	   -> fh_cl;
 
 //ARP request from Host
@@ -65,7 +67,7 @@ fh_cl[0]  -> fake_arp_responder
 //IP from Host
 fh_cl[1] -> Strip(14)						// remove crap Ether header
          -> MarkIPHeader(0)
-	 -> IPPrint(IPFromK)
+	 //-> IPPrint(IPFromK)
          -> StoreIPAddress($MESH_IP_ADDR, src)			// store real address as source (Host's IP address)
          -> FixChecksums                        		// recalculate checksum
 	 -> gs :: IPClassifier(dst net $MESH_NETWORK, -)  	// classify local network and external network traffic
@@ -76,8 +78,9 @@ fh_cl[2] -> Discard;
 
 //Sets the gateway to serve the request
 gs[1] -> [0]gate_selector[0]
+      -> Print(AfterGWS)
       -> Queue 
-      -> [1]rrs1
+      -> [2]rrs
 
 gate_selector[1]-> Discard;					// when no gates are present in the network, all the packets are discarded
 
@@ -86,7 +89,8 @@ rrs1 -> pt::PullTee -> Discard
 pt[1]	 -> [0]real_arp_handler
 	 -> Queue -> [0]rrs;
 
-rrs -> ToDevice($MESH_IFNAME);
+rrs -> IPPrint(IPToDevice)
+    -> ToDevice($MESH_IFNAME);
 
 
 				/***************************** AP **************************************/
@@ -94,22 +98,25 @@ rrs -> ToDevice($MESH_IFNAME);
 apaq::ARPQuerier(192.168.12.1, ap0)
 IPRewriterPatterns(to_world_pat $AP_IP_ADDR - - -,
 		   to_server_pat - - - -);
-//rrs2 :: RoundRobinSched()
 rw :: IPRewriter(// internal traffic to outside world
 		 pattern to_world_pat 0 1,
 		 // external traffic redirected to 'intern_server'
 		 pattern to_server_pat 1 0);
 
-FromDevice(ap0 ,SNIFFER false) -> apcl::Classifier(12/0800, 12/0806 20/0002)
+FromDevice(ap0 ,SNIFFER false) -> apcl::Classifier(12/0800, 12/0806 20/0002, 12/0806 20/0001)
 			       -> Strip(14)
 			       -> MarkIPHeader(0)	
 		//	       -> IPPrint(BeforeNAT)		
 			       -> rw
 		//	       -> IPPrint(AfterNAT)
 			       -> Queue		
-			       -> [2]rrs1
+			       -> [1]rrs1
 
 apcl[1] -> [1]apaq			
+
+apcl[2] -> ARPResponder(192.168.12.1 e8:94:f6:26:25:a6) 
+	-> Queue
+        -> [1]rrs2 
 
 				/**************************** MESH *************************************/
 
@@ -144,7 +151,9 @@ ipc[1]    -> Strip(14)
 	  -> apaq
           -> Print(AfterAQ)     		 
 	  -> Queue
-	  -> ToDevice(ap0)
+	  -> rrs2
+
+rrs2 -> ToDevice(ap0)
 
 // Drop packets not meant for the host
 ipc[2] -> Discard;
