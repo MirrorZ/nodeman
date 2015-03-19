@@ -5,7 +5,7 @@ import select
 
 startTime = datetime.datetime.now()
 
-NUMBER = 16
+NUMBER = 8
 TCP_IP = '192.168.42.5'
 TCP_PORT = 80
 BUFFER_SIZE = 1024
@@ -23,7 +23,7 @@ for i in range(0,NUMBER):
         s.connect((TCP_IP, TCP_PORT))
         sl.append(s)
         fx.append(x)
-        req = 'GET /1M HTTP/1.1\r\nHost: 192.168.42.5\r\nConnection: close\r\nUser-Agent: SCAR/1.0.0\r\nAccept-Encoding: application/octet-stream\r\nAccept-Charset: ISO-8859-1,UTF-8;q=0.7,*;q=0.7\r\nCache-Control: no-cache\r\n\r\n'
+        req = 'GET /files/IMG_0175.JPG HTTP/1.1\r\nHost: 192.168.42.5\r\nConnection: close\r\nUser-Agent: SCAR/1.0.0\r\nAccept-Encoding: application/octet-stream\r\nAccept-Charset: ISO-8859-1,UTF-8;q=0.7,*;q=0.7\r\nCache-Control: no-cache\r\n\r\n'
         s.send(req)
 
 #print "SL IS : " + str(sl)

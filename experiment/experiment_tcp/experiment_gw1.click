@@ -20,17 +20,16 @@
 
 
 AddressInfo(
-//	GW1_IP 192.168.42.148,
-//	GW2_IP 192.168.42.148,
+	GW1_IP 192.168.42.148,
+	GW2_IP 192.168.42.148,
 //	GW1_MAC C0-4A-00-23-BA-BD,
-//	GW2_MAC E8-DE-27-09-06-20,
-//	GW2_MAC C0-4A-00-23-BA-BD,
-//	GW1_MAC E8-DE-27-09-06-20,
-	REAL_IP 192.168.43.6,
+	GW2_MAC E8-DE-27-09-06-20,
+//	GW2_MAC C0-4A-00-23-BA-BD, 
+	GW1_MAC E8-DE-27-09-06-20,
+	REAL_IP 192.168.42.100,
 	REAL_NETWORK 192.168.42.1/24,
-	SERVER_IP 192.168.74.101,
+	SERVER_IP 192.168.42.5,
 	REAL_MAC C4-6E-1F-11-C1-E9,
-//	REAL_MAC 00:26:5A:18:47:9F,
 	FAKE_IP 10.0.0.1,
 	FAKE_MAC 1A-2B-3C-4D-5E-6F,
 	FAKE_NETWORK 10.0.0.1/8)
@@ -44,12 +43,12 @@ AddressInfo(
  */
 
 tap	:: KernelTap(FAKE_NETWORK, ETHER FAKE_MAC)
-ar 	:: ARPResponder(0/0 c0:4a:00:23:ba:bd);
+ar 	:: ARPResponder(0/0 1:1:1:1:1:1);
 fh_cl 	:: Classifier(12/0806, 12/0800)
-fd_cl 	:: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800,12/0700, 12/0701,-)
+fd_cl 	:: Classifier(12/0806 20/0001, 12/0806 20/0002, 12/0800, -)
 fd 	:: FromDevice(mesh0, SNIFFER false)
 rrs 	:: RoundRobinSched()
-gate_selector :: GatewaySelector()
+rrs1 	:: RoundRobinSched()
 
 /* fix the IP checksum, and any embedded checksums that include data
  * from the IP header (TCP and UDP in particular)
@@ -85,28 +84,44 @@ fh_cl[1]    -> Strip(14)                           		// Remove Fake Ether header
             -> MarkIPHeader(0)
             -> StoreIPAddress(REAL_IP, 12)			// Store real address as source (Host's IP address)
             -> FixChecksums                       		// Recalculate checksum
-    	    -> gs :: IPClassifier(dst SERVER_IP, -) 
+	    -> gs :: IPClassifier(dst SERVER_IP, -) 
 
-gs[0]  	-> [0]gate_selector[0]
+gs[0]  	    -> portclassifier :: IPClassifier(src port & 1 == 1, -)
+  	    -> SetIPAddress(GW1_IP)                              // Route via Gate1 by setting it's annotation
 	    -> Queue
-	    -> [0]rrs
+	    -> EtherEncap(0x0800, REAL_MAC, GW1_MAC)
+	    -> [0]rrs1
+
+portclassifier[1] -> SetIPAddress(GW2_IP)			// Route via Gate2 by setting it's annotation
+		  -> Queue
+		  -> EtherEncap(0x0800, REAL_MAC, GW2_MAC)
+		  -> [1]rrs1
+
 
 gs[1]    -> Discard;
 
-gate_selector[1] -> Discard;
+rrs1     -> pt::PullTee 
+         -> Discard
 
-rrs      //->  Print(Going_out) 
- ->td::ToDevice(mesh0);
+pt[1]	 -> Queue 
+         -> [0]rrs;
+
+ptx :: PullTee;
+
+rrs      -> ptx[1] 
+         -> Queue  
+         -> td::ToDevice(mesh0);
+
+ptx[0] -> Discard;
 
 fd -> fd_cl;						//From Device to CLassifier
 
-/* ARP request from device destined for the host's IP are 
+/* ARP request from device for destined for the host's IP are 
  * responded with it's MAC address
  */
 fd_cl[0]  -> ARPResponder(REAL_IP REAL_MAC) 
           -> Queue 
-          //-> EtherEncap(0x0800, c4:6e:1f:11:c1:e9, c0:4a:00:23:ba:bd)
-	  //		  -> Print(ARPResponse)	
+          -> EtherEncap(0x0800, c4:6e:1f:11:c1:e9, c0:4a:00:23:ba:bd)
           -> [1]rrs
 
 fd_cl[1] -> t :: Tee;					//ARP response from device
@@ -116,7 +131,6 @@ t[0]     -> tap
  * IP packets for the host are send to the kernel for processing
  * while those meant for some other node and discarded
  */
-
 fd_cl[2]  -> CheckIPHeader(14)        
 	  -> ipc :: IPClassifier(dst REAL_IP, -)
           -> StoreIPAddress(FAKE_IP, 30)
@@ -127,9 +141,5 @@ fd_cl[2]  -> CheckIPHeader(14)
 
 ipc[1] -> Discard;					//Discard IP packet not meant for the host
 
-fd_cl[5] -> tap         				//Any other traffic from device is sent to kernel for processing
-
-fd_cl[3] -> Print("MAC-PING", MAXLENGTH 200) -> [1]gate_selector;
-
-fd_cl[4] -> Print("MAC-ANTIPING", MAXLENGTH 200) -> [2]gate_selector;
+fd_cl[3] -> tap         				//Any other traffic from device is sent to kernel for processing
 
